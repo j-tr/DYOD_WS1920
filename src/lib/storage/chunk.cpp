@@ -21,6 +21,10 @@ void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) {
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
   // Implementation goes here
+  DebugAssert(values.size() == _segments.size(), "New data row has no matching size");
+  for (auto& segment : _segments){
+  	segment->append(values[&segment - &_segments[0]]);
+  }
 }
 
 std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const {
