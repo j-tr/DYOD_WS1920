@@ -14,9 +14,7 @@
 namespace opossum {
 
 template <typename T>
-ValueSegment<T>::ValueSegment()
-  : _values{std::vector<T>()} 
-{}
+ValueSegment<T>::ValueSegment() : _values{std::vector<T>()} {}
 
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {

@@ -1,5 +1,6 @@
 #include "storage_manager.hpp"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,13 +25,9 @@ void StorageManager::drop_table(const std::string& name) {
   }
 }
 
-std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const {
-  return _tables.at(name);
-}
+std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const { return _tables.at(name); }
 
-bool StorageManager::has_table(const std::string& name) const {
-  return _tables.find(name) != _tables.end();
-}
+bool StorageManager::has_table(const std::string& name) const { return _tables.find(name) != _tables.end(); }
 
 std::vector<std::string> StorageManager::table_names() const {
   std::vector<std::string> names;
@@ -42,12 +39,11 @@ std::vector<std::string> StorageManager::table_names() const {
 
 void StorageManager::print(std::ostream& out) const {
   for (auto& table : _tables) {
-    out << table.first << " " << table.second->column_count() << " " << table.second->row_count() << " " << table.second->chunk_count() << std::endl;
+    out << table.first << " " << table.second->column_count() << " " << table.second->row_count() << " "
+        << table.second->chunk_count() << std::endl;
   }
 }
 
-void StorageManager::reset() {
-  _tables = std::map<std::string, std::shared_ptr<Table>>();
-}
+void StorageManager::reset() { _tables = std::map<std::string, std::shared_ptr<Table>>(); }
 
 }  // namespace opossum
