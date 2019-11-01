@@ -34,6 +34,11 @@ size_t ValueSegment<T>::size() const {
 }
 
 template <typename T>
+size_t ValueSegment<T>::estimate_memory_usage() const {
+  return 0;
+}
+
+template <typename T>
 const std::vector<T>& ValueSegment<T>::values() const {
   return _values;
 }
