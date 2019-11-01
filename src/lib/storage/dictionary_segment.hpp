@@ -41,10 +41,6 @@ class DictionarySegment : public BaseSegment {
     }   
     sort(_dictionary->begin(), _dictionary->end());
 
-    for (auto& tmp : (*_dictionary)) {
-      std::cout << tmp << std::endl;
-    }
-
     for (size_t i = 0; i < base_segment->size(); ++i) {
       for (size_t j = 0; j < _dictionary->size(); ++j) {
         if (_dictionary->at(j) == type_cast<T>((*base_segment)[i])) {
