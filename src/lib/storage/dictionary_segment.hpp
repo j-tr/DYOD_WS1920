@@ -27,7 +27,32 @@ class DictionarySegment : public BaseSegment {
   /**
    * Creates a Dictionary segment from a given value segment.
    */
-  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment);
+  explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
+    // TODO find more intelligent way to create dictionary encoding
+    //
+    _dictionary = std::make_shared<std::vector<T>>(std::vector<T>());
+    _attribute_vector = std::make_shared<std::vector<uint32_t>>(std::vector<uint32_t>());
+    for (size_t i = 0; i < base_segment->size(); ++i) {
+      T value = type_cast<T>((*base_segment)[i]);
+      if(std::find(_dictionary->begin(), _dictionary->end(), value) == _dictionary->end()) {
+        /* dictionary does not contain value */
+        _dictionary->push_back(type_cast<T>((*base_segment)[i]));
+      } 
+    }   
+    sort(_dictionary->begin(), _dictionary->end());
+
+    for (auto& tmp : (*_dictionary)) {
+      std::cout << tmp << std::endl;
+    }
+
+    for (size_t i = 0; i < base_segment->size(); ++i) {
+      for (size_t j = 0; j < _dictionary->size(); ++j) {
+        if (_dictionary->at(j) == type_cast<T>((*base_segment)[i])) {
+          _attribute_vector->push_back(j);
+        }
+      }
+    }   
+  }
 
   // SEMINAR INFORMATION: Since most of these methods depend on the template parameter, you will have to implement
   // the DictionarySegment in this file. Replace the method signatures with actual implementations.
@@ -69,10 +94,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
   ValueID lower_bound(T value) const {
+    // TODO intelligent search algorithm
     for (auto it = _attribute_vector->begin(); it != _attribute_vector->end(); ++it) {
       auto dict_value = _dictionary->at(*(it));
       if (dict_value >= value) {
-        return ValueID(dict_value);
+        return ValueID((*it));
       }
     }
     return INVALID_VALUE_ID;
@@ -86,10 +112,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
   ValueID upper_bound(T value) const {
+    // TODO intelligent search algorithm
     for (auto it = _attribute_vector->begin(); it != _attribute_vector->end(); ++it) {
       auto dict_value = _dictionary->at(*it);
       if (dict_value > value) {
-        return ValueID(dict_value);
+        return ValueID((*it));
       }
     }
     return INVALID_VALUE_ID;
