@@ -153,4 +153,9 @@ class DictionarySegment : public BaseSegment {
   //std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
 };
 
+  template<typename T>
+  size_t DictionarySegment<T>::estimate_memory_usage() const {
+    return _attribute_vector->size() * _attribute_vector->width() + _dictionary->size() * sizeof(T);
+  }
+
 }  // namespace opossum
