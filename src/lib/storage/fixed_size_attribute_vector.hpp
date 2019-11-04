@@ -6,7 +6,7 @@
 namespace opossum {
 
 template <typename T>
-class FixedSizeAttributeVector : private BaseAttributeVector {
+class FixedSizeAttributeVector : public BaseAttributeVector {
  public:
   FixedSizeAttributeVector(const size_t size) {
     _attribute_vector = std::vector<T>(size);

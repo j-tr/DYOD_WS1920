@@ -43,14 +43,13 @@ class DictionarySegment : public BaseSegment {
     sort(_dictionary->begin(), _dictionary->end());
 
     if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()){
-      std::shared_ptr<FixedSizeAttributeVector<uint8_t>> shared_pointer = std::make_shared<FixedSizeAttributeVector<uint8_t>>(FixedSizeAttributeVector<uint8_t>(base_segment->size()));
-      _attribute_vector = shared_pointer;
-    } /*else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()){
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(FixedSizeAttributeVector<uint16_t>(base_segment->size()));
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(base_segment->size());
+    } else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(base_segment->size());
     } else {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(FixedSizeAttributeVector<uint32_t>(base_segment->size()));
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(base_segment->size());
     }
-    */
+
     // for each entry in the segment
     for (size_t i = 0; i < base_segment->size(); ++i) {
       // find corresponding dictionary value
