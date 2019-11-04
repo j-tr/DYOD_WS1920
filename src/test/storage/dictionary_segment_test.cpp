@@ -37,6 +37,11 @@ TEST_F(StorageDictionarySegmentTest, CompressSegmentString) {
   EXPECT_EQ((*dict)[1], "Bill");
   EXPECT_EQ((*dict)[2], "Hasso");
   EXPECT_EQ((*dict)[3], "Steve");
+
+  // Test memory usage estimation (based on very short strings)
+  auto attribute_vector_size = 6u * sizeof(uint8_t);
+  auto dictionary_size = 4u * sizeof(std::string);
+  EXPECT_EQ(dict_col->estimate_memory_usage(), attribute_vector_size + dictionary_size);
 }
 
 TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
@@ -55,3 +60,27 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
 }
 
 // TODO(student): You should add some more tests here (full coverage would be appreciated) and possibly in other files.
+
+TEST_F(StorageDictionarySegmentTest, CorrectAttributeVectorWidth) {
+  for (int i = 0; i <= 10; i += 2) vc_int->append(i);
+  auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
+  auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+
+  EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint8_t));
+
+  // append 2 ^ 8 more values
+  for (int i = 0; i <= 256; i++) vc_int->append(i);
+
+  col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
+  dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+  EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint16_t));
+
+  /*  takes too long
+  // append 2 ^ 16 more values
+  for (int i = 0; i <= 65536; i++) vc_int->append(i);
+
+  col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
+  dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+  EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint32_t));
+  */
+}
