@@ -10,6 +10,7 @@
 #include "all_type_variant.hpp"
 #include "types.hpp"
 #include "utils/performance_warning.hpp"
+#include "fixed_size_attribute_vector.hpp"
 
 namespace opossum {
 
@@ -31,7 +32,7 @@ class DictionarySegment : public BaseSegment {
     // TODO find more intelligent way to create dictionary encoding
     //
     _dictionary = std::make_shared<std::vector<T>>(std::vector<T>());
-    _attribute_vector = std::make_shared<std::vector<uint32_t>>(std::vector<uint32_t>());
+
     for (size_t i = 0; i < base_segment->size(); ++i) {
       T value = type_cast<T>((*base_segment)[i]);
       if(std::find(_dictionary->begin(), _dictionary->end(), value) == _dictionary->end()) {
@@ -41,10 +42,21 @@ class DictionarySegment : public BaseSegment {
     }   
     sort(_dictionary->begin(), _dictionary->end());
 
+    if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()){
+      std::shared_ptr<FixedSizeAttributeVector<uint8_t>> shared_pointer = std::make_shared<FixedSizeAttributeVector<uint8_t>>(FixedSizeAttributeVector<uint8_t>(base_segment->size()));
+      _attribute_vector = shared_pointer;
+    } /*else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()){
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(FixedSizeAttributeVector<uint16_t>(base_segment->size()));
+    } else {
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(FixedSizeAttributeVector<uint32_t>(base_segment->size()));
+    }
+    */
+    // for each entry in the segment
     for (size_t i = 0; i < base_segment->size(); ++i) {
+      // find corresponding dictionary value
       for (size_t j = 0; j < _dictionary->size(); ++j) {
         if (_dictionary->at(j) == type_cast<T>((*base_segment)[i])) {
-          _attribute_vector->push_back(j);
+          _attribute_vector->set(i, ValueID(j));
         }
       }
     }   
@@ -57,13 +69,13 @@ class DictionarySegment : public BaseSegment {
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     PerformanceWarning("operator[] used");
 
-    auto valueID = _attribute_vector->at(chunk_offset);
+    auto valueID = _attribute_vector->get(chunk_offset);
     return _dictionary->at(valueID);
   }
 
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
-    auto valueID = _attribute_vector->at(chunk_offset);
+    auto valueID = _attribute_vector->get(chunk_offset);
     return _dictionary[valueID];
   }
 
@@ -91,10 +103,10 @@ class DictionarySegment : public BaseSegment {
   // returns INVALID_VALUE_ID if all values are smaller than the search value
   ValueID lower_bound(T value) const {
     // TODO intelligent search algorithm
-    for (auto it = _attribute_vector->begin(); it != _attribute_vector->end(); ++it) {
-      auto dict_value = _dictionary->at(*(it));
+    for (size_t i = 0; i < _attribute_vector->size(); ++i) {
+      auto dict_value = _dictionary->at(_attribute_vector->get(i));
       if (dict_value >= value) {
-        return ValueID((*it));
+        return ValueID(_attribute_vector->get(i));
       }
     }
     return INVALID_VALUE_ID;
@@ -109,10 +121,10 @@ class DictionarySegment : public BaseSegment {
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
   ValueID upper_bound(T value) const {
     // TODO intelligent search algorithm
-    for (auto it = _attribute_vector->begin(); it != _attribute_vector->end(); ++it) {
-      auto dict_value = _dictionary->at(*it);
+    for (size_t i = 0; i < _attribute_vector->size(); ++i) {
+      auto dict_value = _dictionary->at(_attribute_vector->get(i));
       if (dict_value > value) {
-        return ValueID((*it));
+        return ValueID(_attribute_vector->get(i));
       }
     }
     return INVALID_VALUE_ID;
@@ -138,8 +150,8 @@ class DictionarySegment : public BaseSegment {
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
-  // std::shared_ptr<BaseAttributeVector> _attribute_vector;
-  std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
+  std::shared_ptr<BaseAttributeVector> _attribute_vector;
+  //std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
 };
 
 }  // namespace opossum

@@ -4,6 +4,7 @@ set(
     all_type_variant.hpp
     resolve_type.hpp
     storage/base_attribute_vector.hpp
+    storage/fixed_size_attribute_vector.hpp
     storage/base_segment.hpp
     storage/chunk.cpp
     storage/chunk.hpp
