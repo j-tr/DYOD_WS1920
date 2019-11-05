@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "value_segment.hpp"
+#include "dictionary_segment.hpp"
 
 #include "resolve_type.hpp"
 #include "types.hpp"
@@ -86,6 +87,14 @@ const Chunk& Table::get_chunk(ChunkID chunk_id) const {
   return const_cast<Table*>(this)->get_chunk(chunk_id);
 }
 
-void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+void Table::compress_chunk(ChunkID chunk_id) {
+  // TODO Test implementation
+  auto& chunk = this->get_chunk(chunk_id);
+  for (size_t column_id = 0; column_id == chunk.size(); ++column_id) {
+    std::string type = this->column_type(ColumnID(column_id));
+    std::shared_ptr<BaseSegment> segment = chunk.get_segment(ColumnID(column_id));
+    segment = make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment);
+  } 
+}
 
 }  // namespace opossum
