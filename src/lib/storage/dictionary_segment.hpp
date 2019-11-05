@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "type_cast.hpp"
 #include "all_type_variant.hpp"
@@ -101,14 +102,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
   ValueID lower_bound(T value) const {
-    // TODO intelligent search algorithm
-    for (size_t i = 0; i < _attribute_vector->size(); ++i) {
-      auto dict_value = _dictionary->at(_attribute_vector->get(i));
-      if (dict_value >= value) {
-        return ValueID(_attribute_vector->get(i));
-      }
+    auto lower_bound_it = std::lower_bound(_dictionary->begin(), _dictionary->end(), value);
+    if (lower_bound_it == _dictionary->end()) {
+      return INVALID_VALUE_ID;
     }
-    return INVALID_VALUE_ID;
+    return ValueID(lower_bound_it - _dictionary->begin());
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
@@ -119,14 +117,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
   ValueID upper_bound(T value) const {
-    // TODO intelligent search algorithm
-    for (size_t i = 0; i < _attribute_vector->size(); ++i) {
-      auto dict_value = _dictionary->at(_attribute_vector->get(i));
-      if (dict_value > value) {
-        return ValueID(_attribute_vector->get(i));
-      }
+    auto upper_bound_it = std::upper_bound(_dictionary->begin(), _dictionary->end(), value);
+    if (upper_bound_it == _dictionary->end()) {
+      return INVALID_VALUE_ID;
     }
-    return INVALID_VALUE_ID;
+    return ValueID(upper_bound_it - _dictionary->begin());
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
