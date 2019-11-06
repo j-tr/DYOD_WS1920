@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "base_segment.hpp"
 #include "type_cast.hpp"
 #include "all_type_variant.hpp"
 #include "types.hpp"
