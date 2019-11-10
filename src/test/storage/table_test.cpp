@@ -8,8 +8,8 @@
 #include "gtest/gtest.h"
 
 #include "../lib/resolve_type.hpp"
-#include "../lib/storage/table.hpp"
 #include "../lib/storage/dictionary_segment.hpp"
+#include "../lib/storage/table.hpp"
 
 namespace opossum {
 
@@ -81,10 +81,14 @@ TEST_F(StorageTableTest, CompressChunk) {
   t.compress_chunk(ChunkID(0));
   t.compress_chunk(ChunkID(1));
 
-  auto segment_0_0 = std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(0))));
-  auto segment_0_1 = std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(1))));
-  auto segment_1_0 = std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(0))));
-  auto segment_1_1 = std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(1))));
+  auto segment_0_0 =
+      std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(0))));
+  auto segment_0_1 =
+      std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(1))));
+  auto segment_1_0 =
+      std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(0))));
+  auto segment_1_1 =
+      std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(1))));
 
   // Test dictionary size (uniqueness)
   EXPECT_EQ(segment_0_0->unique_values_count(), 2u);
@@ -103,6 +107,6 @@ TEST_F(StorageTableTest, CompressChunk) {
   EXPECT_EQ((*(segment_0_0->dictionary()))[1], 4);
   EXPECT_EQ((*(segment_1_1->dictionary()))[0], "A");
   EXPECT_EQ((*(segment_1_1->dictionary()))[1], "world");
- }
+}
 
 }  // namespace opossum

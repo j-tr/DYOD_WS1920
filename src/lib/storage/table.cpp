@@ -4,15 +4,15 @@
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <mutex>
-#include <thread>
 
-#include "value_segment.hpp"
 #include "dictionary_segment.hpp"
+#include "value_segment.hpp"
 
 #include "resolve_type.hpp"
 #include "types.hpp"
@@ -53,12 +53,12 @@ void Table::append(std::vector<AllTypeVariant> values) {
 
 uint16_t Table::column_count() const { return _column_names.size(); }
 
-uint64_t Table::row_count() const { 
+uint64_t Table::row_count() const {
   uint64_t row_count = 0;
-  for (auto& chunk : _chunks){
+  for (auto& chunk : _chunks) {
     row_count += chunk->size();
   }
-  return row_count; 
+  return row_count;
 }
 
 ChunkID Table::chunk_count() const { return ChunkID(_chunks.size()); }
@@ -92,19 +92,17 @@ Chunk& Table::get_chunk(ChunkID chunk_id) {
   return *_chunks[chunk_id];
 }
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const {
-  return const_cast<Table*>(this)->get_chunk(chunk_id);
-}
+const Chunk& Table::get_chunk(ChunkID chunk_id) const { return const_cast<Table*>(this)->get_chunk(chunk_id); }
 
 std::mutex exchange_chunk;
 
 void Table::compress_chunk(ChunkID chunk_id) {
   auto& chunk = this->get_chunk(chunk_id);
-  
+
   // create structures and lambda function
-  std::vector<std::thread> threads; 
-  std::vector<std::shared_ptr<BaseSegment>> compressed_segments(chunk.column_count());  
-  auto compress = [&compressed_segments](auto type, auto segment, auto segment_id){
+  std::vector<std::thread> threads;
+  std::vector<std::shared_ptr<BaseSegment>> compressed_segments(chunk.column_count());
+  auto compress = [&compressed_segments](auto type, auto segment, auto segment_id) {
     compressed_segments.at(segment_id) = make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment);
   };
 
@@ -113,11 +111,11 @@ void Table::compress_chunk(ChunkID chunk_id) {
     std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
     std::string type = this->column_type(column_id);
     threads.push_back(std::thread(compress, type, segment, column_id));
-  } 
+  }
 
   // join threads and add segment to chunk
   Chunk dictionary_chunk;
-  for(size_t thread_id = 0; thread_id < threads.size(); ++thread_id){
+  for (size_t thread_id = 0; thread_id < threads.size(); ++thread_id) {
     threads[thread_id].join();
     dictionary_chunk.add_segment(compressed_segments.at(thread_id));
   }
