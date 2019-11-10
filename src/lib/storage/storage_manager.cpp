@@ -16,7 +16,8 @@ StorageManager& StorageManager::get() {
 }
 
 void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
-  _tables.insert(std::pair<std::string, std::shared_ptr<Table>>(name, table));
+  auto r = _tables.insert(std::pair<std::string, std::shared_ptr<Table>>(name, table));
+  Assert(r.second, "Table with given name already exists");
 }
 
 void StorageManager::drop_table(const std::string& name) {
@@ -31,6 +32,7 @@ bool StorageManager::has_table(const std::string& name) const { return _tables.f
 
 std::vector<std::string> StorageManager::table_names() const {
   std::vector<std::string> names;
+  names.reserve(_tables.size());
   for (auto& table : _tables) {
     names.push_back(table.first);
   }
@@ -44,6 +46,6 @@ void StorageManager::print(std::ostream& out) const {
   }
 }
 
-void StorageManager::reset() { _tables = std::map<std::string, std::shared_ptr<Table>>(); }
+void StorageManager::reset() { _tables.clear(); }
 
 }  // namespace opossum

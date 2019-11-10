@@ -17,13 +17,13 @@ namespace opossum {
 void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) { _segments.push_back(segment); }
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
-  DebugAssert(values.size() == column_count(), "New data row has no matching size");
-  for (int i = 0; i < column_count(); ++i) {
-    _segments[i]->append(values[i]);
+  DebugAssert(values.size() == column_count(), "Column count of new row needs to match coloumn count of table");
+  for (ColumnID column_id(0); column_id < column_count(); ++column_id) {
+    _segments[column_id]->append(values[column_id]);
   }
 }
 
-std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const { return _segments[column_id]; }
+std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const { return _segments.at(column_id); }
 
 uint16_t Chunk::column_count() const { return _segments.size(); }
 
