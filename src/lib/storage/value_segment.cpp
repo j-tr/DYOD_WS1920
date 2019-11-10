@@ -20,7 +20,7 @@ template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
   PerformanceWarning("operator[] used");
 
-  return _values[chunk_offset];
+  return _values.at(chunk_offset);
 }
 
 template <typename T>
