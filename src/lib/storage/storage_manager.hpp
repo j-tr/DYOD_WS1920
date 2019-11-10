@@ -43,6 +43,7 @@ class StorageManager : private Noncopyable {
  protected:
   StorageManager() {}
   StorageManager& operator=(StorageManager&&) = default;
+  std::map<std::string, std::shared_ptr<Table>> _tables;
 
   // Implementation goes here
 };
