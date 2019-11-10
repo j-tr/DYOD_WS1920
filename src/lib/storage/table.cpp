@@ -91,4 +91,6 @@ Chunk& Table::get_chunk(ChunkID chunk_id) {
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return get_chunk(chunk_id); }
 
+void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+
 }  // namespace opossum
