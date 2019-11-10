@@ -97,11 +97,13 @@ const Chunk& Table::get_chunk(ChunkID chunk_id) const {
 void Table::compress_chunk(ChunkID chunk_id) {
   // TODO Test implementation
   auto& chunk = this->get_chunk(chunk_id);
-  for (size_t column_id = 0; column_id == chunk.size(); ++column_id) {
-    std::string type = this->column_type(ColumnID(column_id));
-    std::shared_ptr<BaseSegment> segment = chunk.get_segment(ColumnID(column_id));
-    segment = make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment);
+  Chunk dictionary_chunk;
+  for (ColumnID column_id(0); column_id < chunk.size(); ++column_id) {
+    std::string type = this->column_type(column_id);
+    std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
+    dictionary_chunk.add_segment(make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment));
   } 
+  chunk = std::move(dictionary_chunk);
 }
 
 }  // namespace opossum

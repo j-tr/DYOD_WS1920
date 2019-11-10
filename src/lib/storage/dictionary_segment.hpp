@@ -31,19 +31,17 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
-    // TODO find more intelligent way to create dictionary encoding
-    //
-    _dictionary = std::make_shared<std::vector<T>>(std::vector<T>());
+    // create dictionary
+    _dictionary = std::make_shared<std::vector<T>>();
+    _dictionary->reserve(base_segment->size());
+    for (ColumnID segment_column(0); segment_column < base_segment->size(); ++segment_column){
+      _dictionary->push_back(type_cast<T>((*base_segment)[segment_column]));
+    }
+    std::sort(_dictionary->begin(), _dictionary->end());
+    auto last = std::unique(_dictionary->begin(), _dictionary->end());
+    _dictionary->erase(last, _dictionary->end());
 
-    for (size_t i = 0; i < base_segment->size(); ++i) {
-      T value = type_cast<T>((*base_segment)[i]);
-      if(std::find(_dictionary->begin(), _dictionary->end(), value) == _dictionary->end()) {
-        /* dictionary does not contain value */
-        _dictionary->push_back(type_cast<T>((*base_segment)[i]));
-      } 
-    }   
-    sort(_dictionary->begin(), _dictionary->end());
-
+    // create Attribute Vector with minimal width
     if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()){
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(base_segment->size());
     } else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()){
@@ -53,13 +51,10 @@ class DictionarySegment : public BaseSegment {
     }
 
     // for each entry in the segment
-    for (size_t i = 0; i < base_segment->size(); ++i) {
+    for (ColumnID segment_column(0); segment_column < base_segment->size(); ++segment_column) {
       // find corresponding dictionary value
-      for (size_t j = 0; j < _dictionary->size(); ++j) {
-        if (_dictionary->at(j) == type_cast<T>((*base_segment)[i])) {
-          _attribute_vector->set(i, ValueID(j));
-        }
-      }
+      auto pos = std::find(_dictionary->begin(), _dictionary->end(), type_cast<T>((*base_segment)[segment_column]));
+      _attribute_vector->set(segment_column, ValueID(std::distance(_dictionary->begin(), pos)));
     }   
   }
 
@@ -77,7 +72,7 @@ class DictionarySegment : public BaseSegment {
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
     auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary[valueID];
+    return _dictionary.at(valueID);
   }
 
   // dictionary segments are immutable
