@@ -98,7 +98,6 @@ const Chunk& Table::get_chunk(ChunkID chunk_id) const {
 std::mutex exchange_chunk;
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  // TODO Test implementation
   auto& chunk = this->get_chunk(chunk_id);
   Chunk dictionary_chunk;
   for (ColumnID column_id(0); column_id < chunk.size(); ++column_id) {
