@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <mutex>
+#include <thread>
 
 #include "value_segment.hpp"
 #include "dictionary_segment.hpp"
@@ -99,12 +100,29 @@ std::mutex exchange_chunk;
 
 void Table::compress_chunk(ChunkID chunk_id) {
   auto& chunk = this->get_chunk(chunk_id);
-  Chunk dictionary_chunk;
+  
+  // create structures and lambda function
+  std::vector<std::thread> threads; 
+  std::vector<std::shared_ptr<BaseSegment>> compressed_segments(chunk.column_count());  
+  auto compress = [&compressed_segments](auto type, auto segment, auto segment_id){
+    compressed_segments.at(segment_id) = make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment);
+  };
+
+  // start thread for each segment
   for (ColumnID column_id(0); column_id < chunk.size(); ++column_id) {
-    std::string type = this->column_type(column_id);
     std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
-    dictionary_chunk.add_segment(make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment));
+    std::string type = this->column_type(column_id);
+    threads.push_back(std::thread(compress, type, segment, column_id));
   } 
+
+  // join threads and add segment to chunk
+  Chunk dictionary_chunk;
+  for(size_t thread_id = 0; thread_id < threads.size(); ++thread_id){
+    threads[thread_id].join();
+    dictionary_chunk.add_segment(compressed_segments.at(thread_id));
+  }
+
+  // replace uncomressed chunk by compressed chunk
   std::lock_guard<std::mutex> lock(exchange_chunk);
   chunk = std::move(dictionary_chunk);
 }
