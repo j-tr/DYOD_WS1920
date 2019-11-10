@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <mutex>
 
 #include "value_segment.hpp"
 #include "dictionary_segment.hpp"
@@ -94,6 +95,8 @@ const Chunk& Table::get_chunk(ChunkID chunk_id) const {
   return const_cast<Table*>(this)->get_chunk(chunk_id);
 }
 
+std::mutex exchange_chunk;
+
 void Table::compress_chunk(ChunkID chunk_id) {
   // TODO Test implementation
   auto& chunk = this->get_chunk(chunk_id);
@@ -103,6 +106,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
     std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
     dictionary_chunk.add_segment(make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment));
   } 
+  std::lock_guard<std::mutex> lock(exchange_chunk);
   chunk = std::move(dictionary_chunk);
 }
 
