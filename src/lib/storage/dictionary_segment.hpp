@@ -9,6 +9,7 @@
 
 #include "all_type_variant.hpp"
 #include "base_segment.hpp"
+#include "value_segment.hpp"
 #include "fixed_size_attribute_vector.hpp"
 #include "type_cast.hpp"
 #include "types.hpp"
