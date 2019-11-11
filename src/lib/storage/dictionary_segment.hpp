@@ -52,8 +52,7 @@ class DictionarySegment : public BaseSegment {
     // for each entry in the segment
     for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
-      auto pos = std::find(_dictionary->begin(), _dictionary->end(), type_cast<T>((*value_segment)[segment_column]));
-      _attribute_vector->set(segment_column, ValueID(std::distance(_dictionary->begin(), pos)));
+      _attribute_vector->set(segment_column, lower_bound(type_cast<T>((*value_segment)[segment_column])));
     }
   }
 
