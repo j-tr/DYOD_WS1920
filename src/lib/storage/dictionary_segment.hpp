@@ -37,10 +37,12 @@ class DictionarySegment : public BaseSegment {
     // create dictionary
     _dictionary = std::make_shared<std::vector<T>>(value_segment->values());
     std::sort(_dictionary->begin(), _dictionary->end());
+    // eliminates all but the first element from every consecutive group of equivalent elements
     auto last = std::unique(_dictionary->begin(), _dictionary->end());
+    // the dictionary must be resized following the unique operation
     _dictionary->erase(last, _dictionary->end());
 
-    // create Attribute Vector with minimal width
+    // create Attribute Vector with the most fitting width
     if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()) {
       _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment->size());
     } else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()) {
@@ -52,7 +54,9 @@ class DictionarySegment : public BaseSegment {
     // for each entry in the segment
     for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
-      _attribute_vector->set(segment_column, lower_bound(type_cast<T>((*value_segment)[segment_column])));
+      const ValueID &dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
+      DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
+      _attribute_vector->set(segment_column, dictionary_value_id);
     }
   }
 
@@ -94,7 +98,7 @@ class DictionarySegment : public BaseSegment {
     if (lower_bound_it == _dictionary->end()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID(lower_bound_it - _dictionary->begin());
+    return ValueID(std::distance(_dictionary->begin(), lower_bound_it));
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
@@ -107,7 +111,7 @@ class DictionarySegment : public BaseSegment {
     if (upper_bound_it == _dictionary->end()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID(upper_bound_it - _dictionary->begin());
+    return ValueID(std::distance(_dictionary->begin(), upper_bound_it));
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
