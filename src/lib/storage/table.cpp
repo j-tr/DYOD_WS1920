@@ -121,7 +121,6 @@ void Table::compress_chunk(ChunkID chunk_id) {
   }
 
   // replace uncompressed chunk by compressed chunk
-  std::lock_guard<std::mutex> lock(_exchange_chunk);
   chunk = std::move(dictionary_chunk);
 }
 
