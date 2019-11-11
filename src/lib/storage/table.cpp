@@ -123,7 +123,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
     dictionary_chunk.add_segment(compressed_segments.at(thread_id));
   }
 
-  // replace uncomressed chunk by compressed chunk
+  // replace uncompressed chunk by compressed chunk
   std::lock_guard<std::mutex> lock(exchange_chunk);
   chunk = std::move(dictionary_chunk);
 }
