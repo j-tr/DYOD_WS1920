@@ -32,13 +32,13 @@ TEST_F(StorageTableTest, ChunkCount) {
 }
 
 TEST_F(StorageTableTest, GetChunk) {
-  t.get_chunk(ChunkID(ChunkID{0}));
+  t.get_chunk(ChunkID(0));
   // TODO(anyone): Do we want checks here?
   // EXPECT_THROW(t.get_chunk(ChunkID(ChunkID{q}), std::exception);
   t.append({4, "Hello,"});
   t.append({6, "world"});
   t.append({3, "!"});
-  t.get_chunk(ChunkID(ChunkID{1}));
+  t.get_chunk(ChunkID(1));
 }
 
 TEST_F(StorageTableTest, ColumnCount) { EXPECT_EQ(t.column_count(), 2u); }
