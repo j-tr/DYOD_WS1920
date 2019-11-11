@@ -92,12 +92,15 @@ Chunk& Table::get_chunk(ChunkID chunk_id) {
   return *_chunks[chunk_id];
 }
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const { return const_cast<Table*>(this)->get_chunk(chunk_id); }
+const Chunk& Table::get_chunk(ChunkID chunk_id) const { 
+  DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
+  return *_chunks[chunk_id];
+}
 
 std::mutex exchange_chunk;
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  auto& chunk = this->get_chunk(chunk_id);
+  auto& chunk = get_chunk(chunk_id);
 
   // create structures and lambda function
   std::vector<std::thread> threads;
