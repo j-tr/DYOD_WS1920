@@ -97,9 +97,9 @@ TEST_F(StorageDictionarySegmentTest, ImmutableAppendTest) {
   auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("string", vc_str);
   auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col);
 
-  auto last_element = (*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)];
-  // should do nothing
+  // Test that appends to dictionary do nothing
   dict_col->append("Juergen");
   EXPECT_EQ(dict_col->unique_values_count(), 4u);
-  EXPECT_EQ((*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)], last_element);
+  auto const last_element = (*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)];
+  EXPECT_TRUE(boost::get<std::string>(last_element) == "Bill");
 }
