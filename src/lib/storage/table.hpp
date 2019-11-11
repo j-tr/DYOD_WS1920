@@ -3,7 +3,7 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -85,6 +85,7 @@ class Table : private Noncopyable {
   std::vector<std::string> _column_types;
   std::vector<std::string> _column_names;
   ChunkOffset _max_chunk_size;
+  mutable std::shared_mutex _chunk_access;
 };
 
 }  // namespace opossum
