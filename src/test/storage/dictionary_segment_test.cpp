@@ -7,6 +7,7 @@
 #include "../../lib/storage/base_segment.hpp"
 #include "../../lib/storage/dictionary_segment.hpp"
 #include "../../lib/storage/value_segment.hpp"
+#include "../../lib/types.hpp"
 
 class StorageDictionarySegmentTest : public ::testing::Test {
  protected:
@@ -83,4 +84,22 @@ TEST_F(StorageDictionarySegmentTest, CorrectAttributeVectorWidth) {
   dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
   EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint32_t));
   */
+}
+
+TEST_F(StorageDictionarySegmentTest, ImmutableAppendTest) {
+  vc_str->append("Bill");
+  vc_str->append("Steve");
+  vc_str->append("Alexander");
+  vc_str->append("Steve");
+  vc_str->append("Hasso");
+  vc_str->append("Bill");
+
+  auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("string", vc_str);
+  auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col);
+
+  auto last_element = (*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)];
+  // should do nothing
+  dict_col->append("Juergen");
+  EXPECT_EQ(dict_col->unique_values_count(), 4u);
+  EXPECT_EQ((*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)], last_element);
 }
