@@ -50,4 +50,10 @@ TEST_F(StorageStorageManagerTest, HasTable) {
   EXPECT_EQ(sm.has_table("first_table"), true);
 }
 
+TEST_F(StorageStorageManagerTest, TableNames) {
+  auto& sm = StorageManager::get();
+  std::vector<std::string> table_names = {"first_table", "second_table"};
+  EXPECT_EQ(sm.table_names(), table_names);
+}
+
 }  // namespace opossum

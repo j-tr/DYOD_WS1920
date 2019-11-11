@@ -102,6 +102,16 @@ TEST_F(StorageTableTest, CompressChunk) {
   EXPECT_EQ(segment_1_0->size(), 2u);
   EXPECT_EQ(segment_1_1->size(), 2u);
 
+  // Test attribute_vector content
+  EXPECT_EQ(segment_0_0->attribute_vector()->get(0), 1);
+  EXPECT_EQ(segment_0_0->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_0_1->attribute_vector()->get(0), 0);
+  EXPECT_EQ(segment_0_1->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_1_0->attribute_vector()->get(0), 0);
+  EXPECT_EQ(segment_1_0->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_1_1->attribute_vector()->get(0), 1); 
+  EXPECT_EQ(segment_1_1->attribute_vector()->get(1), 0);       
+
   // Test sorting
   EXPECT_EQ((*(segment_0_0->dictionary()))[0], 1);
   EXPECT_EQ((*(segment_0_0->dictionary()))[1], 4);
