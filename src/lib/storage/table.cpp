@@ -47,7 +47,6 @@ void Table::append(std::vector<AllTypeVariant> values) {
     }
     _chunks.push_back(new_chunk);
   }
-
   _chunks.back()->append(values);
 }
 
@@ -97,8 +96,6 @@ const Chunk& Table::get_chunk(ChunkID chunk_id) const {
   return *_chunks[chunk_id];
 }
 
-std::mutex exchange_chunk;
-
 void Table::compress_chunk(ChunkID chunk_id) {
   auto& chunk = get_chunk(chunk_id);
 
@@ -124,7 +121,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   }
 
   // replace uncompressed chunk by compressed chunk
-  std::lock_guard<std::mutex> lock(exchange_chunk);
+  std::lock_guard<std::mutex> lock(_exchange_chunk);
   chunk = std::move(dictionary_chunk);
 }
 
