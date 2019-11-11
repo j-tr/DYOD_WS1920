@@ -54,9 +54,8 @@ class DictionarySegment : public BaseSegment {
     // for each entry in the segment
     for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
-      const ValueID &dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
-      DebugAssert(dictionary_value_id != INVALID_VALUE_ID,
-              "a dictionary value must be found for each attribute");
+      const ValueID& dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
+      DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
       _attribute_vector->set(segment_column, dictionary_value_id);
     }
   }
