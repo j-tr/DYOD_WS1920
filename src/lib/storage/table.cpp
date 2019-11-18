@@ -20,8 +20,9 @@
 
 namespace opossum {
 
-Table::Table(const uint32_t chunk_size) : _max_chunk_size{chunk_size} {
+Table::Table(const uint32_t chunk_size) : _max_chunk_size{chunk_size}{
   auto first_chunk = std::make_shared<Chunk>();
+  _chunk_access = std::make_unique<std::shared_mutex>();
   _chunks.push_back(first_chunk);
 }
 
@@ -96,13 +97,13 @@ const std::string& Table::column_type(ColumnID column_id) const {
 
 Chunk& Table::get_chunk(ChunkID chunk_id) {
   DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
-  std::shared_lock read_lock(_chunk_access);
+  // std::shared_lock read_lock(*_chunk_access);
   return *_chunks[chunk_id];
 }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const {
   DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
-  std::shared_lock read_lock(_chunk_access);
+  // std::shared_lock read_lock(*_chunk_access);
   return *_chunks[chunk_id];
 }
 
@@ -131,7 +132,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   }
 
   // replace uncompressed chunk by compressed chunk
-  std::unique_lock write_lock(_chunk_access);
+  std::unique_lock write_lock(*_chunk_access);
   chunk = std::move(dictionary_chunk);
 }
 
