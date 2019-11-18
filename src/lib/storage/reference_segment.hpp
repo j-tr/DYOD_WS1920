@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "utils/assert.hpp"
 #include "base_segment.hpp"
 #include "dictionary_segment.hpp"
 #include "table.hpp"
@@ -21,8 +22,7 @@ class ReferenceSegment : public BaseSegment {
  public:
   // creates a reference segment
   // the parameters specify the positions and the referenced segment
-  ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id,
-                   const std::shared_ptr<const PosList> pos);
+  ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id, const std::shared_ptr<const PosList> pos);
 
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override;
 
@@ -30,10 +30,17 @@ class ReferenceSegment : public BaseSegment {
 
   size_t size() const override;
 
+  size_t estimate_memory_usage() const;
+
   const std::shared_ptr<const PosList> pos_list() const;
   const std::shared_ptr<const Table> referenced_table() const;
 
   ColumnID referenced_column_id() const;
+
+ private:
+  const std::shared_ptr<const Table> _referenced_table;
+  ColumnID _referenced_column_id;
+  const std::shared_ptr<const PosList> _pos_list;
 };
 
 }  // namespace opossum
