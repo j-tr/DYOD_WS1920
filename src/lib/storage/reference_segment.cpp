@@ -3,9 +3,16 @@
 namespace opossum {
 
 ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id, const std::shared_ptr<const PosList> pos)
-  : _referenced_table(referenced_table),
-    _referenced_column_id(referenced_column_id),
-    _pos_list(pos) {}
+  : _referenced_column_id(referenced_column_id), _pos_list(pos) {
+  
+  auto first_segment = std::dynamic_pointer_cast<ReferenceSegment>(referenced_table->get_chunk(ChunkID(0)).get_segment(referenced_column_id));
+
+  if (first_segment) {
+    _referenced_table = first_segment->referenced_table();
+  } else {
+    _referenced_table = referenced_table;
+  }
+}
 
 AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) const {
   Assert(chunk_offset <= size(), "Operator []: The referenced value does not exist");

@@ -136,8 +136,12 @@ void Table::compress_chunk(ChunkID chunk_id) {
   chunk = std::move(dictionary_chunk);
 }
 
-void Table::emplace_chunk(const std::shared_ptr<Chunk> chunk) {
-  _chunks.push_back(chunk);
+void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {
+  if (_chunks[0]->size() == 0){
+    _chunks[0] = chunk;
+  } else {
+    _chunks.push_back(chunk);
+  }
 }
 
 }  // namespace opossum

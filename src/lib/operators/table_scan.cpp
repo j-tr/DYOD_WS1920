@@ -71,10 +71,9 @@ namespace opossum {
           // - append to PosList
           // 
         const auto& segment = input_table->get_chunk(chunk_index).get_segment(_column_id);
-        // might be ValueSegment TODO or other segment (check by dynamic cast)
-        const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
         
-        if (value_segment != nullptr) {
+        // might be ValueSegment TODO or other segment (check by dynamic cast)
+        if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment)){
           const auto& values = value_segment->values();
           const auto value_count = values.size();
           for(auto value_id = ValueID(0); value_id < value_count; value_id++) {
@@ -83,20 +82,22 @@ namespace opossum {
               pos_list->emplace_back(chunk_index, value_id);
             }
           }
+        } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
+          std::cout << "Implement me!" << std::endl;
         }
       }
     });
 
     // TODO: avoid to get another reference table as input_table
+    auto result_table = std::make_shared<Table>(pos_list->size());
     auto chunk = std::make_shared<Chunk>();
     auto column_count = input_table->column_count();
     for(ColumnID column_id(0); column_id < column_count; ++column_id){
       chunk->add_segment(std::make_shared<ReferenceSegment>(input_table, column_id, pos_list));
+      result_table->add_column(input_table->column_name(column_id), input_table->column_type(column_id));
     }
     
-    auto result_table = std::make_shared<Table>(pos_list->size());
     result_table->emplace_chunk(chunk);
-    
     return result_table;
   }
 
