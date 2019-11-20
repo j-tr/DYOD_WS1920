@@ -1,6 +1,10 @@
 #include "table.hpp"
 
 #include <algorithm>
+#include <iomanip>
+#include <limits>
+#include <memory>
+#include <mutex>
 #include <numeric>
 #include <string>
 #include <thread>
