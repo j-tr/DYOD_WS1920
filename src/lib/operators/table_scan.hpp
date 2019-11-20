@@ -28,16 +28,6 @@ class TableScan : public AbstractOperator {
  protected:
   std::shared_ptr<const Table> _on_execute() override;
 
-  template <typename T>
-  class TableScanImpl : public AbstractOperator {
-    public:
-      explicit TableScanImpl(const TableScan& table_scan);
-  protected:
-      std::shared_ptr<const Table> _on_execute();
-    private:
-      const TableScan& _parent;
-  };
-
   const std::shared_ptr<const AbstractOperator> _in;
   const ColumnID _column_id;
   const ScanType _scan_type;

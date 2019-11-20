@@ -31,11 +31,11 @@ class OperatorsTableScanTest : public BaseTest {
     test_even_dict->add_column("b", "int");
     for (int i = 0; i <= 24; i += 2) test_even_dict->append({i, 100 + i});
 
-    // test_even_dict->compress_chunk(ChunkID(0));
-    // test_even_dict->compress_chunk(ChunkID(1));
+    //test_even_dict->compress_chunk(ChunkID(0));
+    //test_even_dict->compress_chunk(ChunkID(1));
 
-    // _table_wrapper_even_dict = std::make_shared<TableWrapper>(std::move(test_even_dict));
-    // _table_wrapper_even_dict->execute();
+    _table_wrapper_even_dict = std::make_shared<TableWrapper>(std::move(test_even_dict));
+    _table_wrapper_even_dict->execute();
   }
 
   std::shared_ptr<TableWrapper> get_table_op_part_dict() {

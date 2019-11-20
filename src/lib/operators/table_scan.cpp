@@ -44,42 +44,37 @@ namespace opossum {
           			   _column_id(column_id), 
           			   _scan_type(scan_type), 
           			   _search_value(search_value) {}
-          
-//  std::unique_ptr<TableScan::TableScanImpl<AllTypeVariant>> TableScan::make_implementation(
-//          const AllTypeVariant &search_value, const std::shared_ptr<const AbstractOperator> in) {
-//    const auto& type_name = _in->get_output()->column_type(_column_id);
-//    return make_unique_by_data_type<AbstractOperator, TableScan::TableScanImpl<AllTypeVariant>>(type_name);
-//  }
 
   std::shared_ptr<const Table> TableScan::_on_execute() {
         
     // Get input table
     const auto input_table = _in->get_output();
-    // get chunks of input value
+
+    // get chunk count
     const ChunkID input_chunk_count = input_table->chunk_count();
-    auto input_segments = std::vector<std::shared_ptr<BaseSegment>>(input_chunk_count);
-    // get (column) segment of each chunk
-    for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
-      const auto& chunk = input_table->get_chunk(chunk_index);
-      input_segments[chunk_index] = chunk.get_segment(_column_id);
-    }
-  	
-    auto referenceSegments = std::vector<ReferenceSegment>();
-            
+
+    // create PosList
+    const auto pos_list = std::make_shared<PosList>();
+
   	// cast all segments to ValueSegment or DictionarySegment
     const auto type_name = input_table->column_type(_column_id);
+
     resolve_data_type(type_name, [&] (auto type) {
       // Deduce type name of column type
       using Type = typename decltype(type)::type;
       const auto comparator = get_comparator<Type>(_scan_type);
       const auto typed_search_value = type_cast<Type>(_search_value);
 
-      for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
-        const auto& segment = input_segments[chunk_index];
-        // might be ValueSegment TODO or other segment
+      for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; ++chunk_index) {
+        // for each segment
+          // - execute the comparison
+          // - append to PosList
+          // 
+        const auto& segment = input_table->get_chunk(chunk_index).get_segment(_column_id);
+        // might be ValueSegment TODO or other segment (check by dynamic cast)
         const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
+        
         if (value_segment != nullptr) {
-          const auto pos_list = std::make_shared<PosList>();
           const auto& values = value_segment->values();
           const auto value_count = values.size();
           for(auto value_id = ValueID(0); value_id < value_count; value_id++) {
@@ -88,33 +83,21 @@ namespace opossum {
               pos_list->emplace_back(chunk_index, value_id);
             }
           }
-          // for each segment
-          // - create PosList
-          // - execute the comparison
-          // 
-          // push_back ReferenceSegment based on PosList
-          if (!pos_list->empty()) {
-            const auto& table = input_table; // TODO use acutal original table to avoid indirection
-            referenceSegments.emplace_back(table, _column_id, pos_list);
-          }
         }
       }
     });
 
-    auto result_table = std::make_shared<Table>(input_table->max_chunk_size());
-    for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
-      const auto chunk = std::make_shared<Chunk>();
-      result_table->emplace_chunk(chunk);
+    // TODO: avoid to get another reference table as input_table
+    auto chunk = std::make_shared<Chunk>();
+    auto column_count = input_table->column_count();
+    for(ColumnID column_id(0); column_id < column_count; ++column_id){
+      chunk->add_segment(std::make_shared<ReferenceSegment>(input_table, column_id, pos_list));
     }
+    
+    auto result_table = std::make_shared<Table>(pos_list->size());
+    result_table->emplace_chunk(chunk);
+    
     return result_table;
-  }
-
-  template <typename T>
-  TableScan::TableScanImpl<T>::TableScanImpl(const TableScan& table_scan) : _parent(table_scan) {}
-
-  template <typename T>
-  std::shared_ptr<const Table> TableScan::TableScanImpl<T>::_on_execute() {
-  	return std::make_shared<const Table>();
   }
 
 }  // namespace opossum
