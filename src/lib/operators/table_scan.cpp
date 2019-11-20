@@ -16,7 +16,7 @@ namespace /* anonymous */ {
   using namespace opossum;
 
   template <typename T>
-  auto get_comparator(ScanType type) { // std::function<bool(T, T)>
+  std::function<bool (T, T)> get_comparator(ScanType type) { // std::function<bool(T, T)>
     switch (type) {
       case ScanType::OpEquals:
         return [](T left, T right) -> bool { return left == right; };
@@ -30,6 +30,8 @@ namespace /* anonymous */ {
         return [](T left, T right) -> bool { return left > right; };
       case ScanType::OpGreaterThanEquals:
         return [](T left, T right) -> bool { return left >= right; };
+      default:
+        throw std::runtime_error("ScanType is not defined");
     }
   }
 }
@@ -50,28 +52,30 @@ namespace opossum {
 //  }
 
   std::shared_ptr<const Table> TableScan::_on_execute() {
-  	const auto& output = _in->get_output();
-  	// get chunks of _in
-  	const ChunkID chunk_count = output->chunk_count();
-  	auto segments = std::vector<std::shared_ptr<BaseSegment>>(chunk_count);
-  	// get (column) segment of each chunk
-  	for (ChunkID chunk_index = ChunkID(0); chunk_index < chunk_count; chunk_index++) {
-  	  const auto& chunk = output->get_chunk(chunk_index);
-  	  segments[chunk_index] = chunk.get_segment(_column_id);
-  	}
+        
+    // Get input table
+    const auto input_table = _in->get_output();
+    // get chunks of input value
+    const ChunkID input_chunk_count = input_table->chunk_count();
+    auto input_segments = std::vector<std::shared_ptr<BaseSegment>>(input_chunk_count);
+    // get (column) segment of each chunk
+    for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
+      const auto& chunk = input_table->get_chunk(chunk_index);
+      input_segments[chunk_index] = chunk.get_segment(_column_id);
+    }
   	
     auto referenceSegments = std::vector<ReferenceSegment>();
             
-  	// cast all segments to ValueSegment, ReferenceSegment, or DictionarySegment
-  	const auto type_name = output->column_type(_column_id);
+  	// cast all segments to ValueSegment or DictionarySegment
+    const auto type_name = input_table->column_type(_column_id);
     resolve_data_type(type_name, [&] (auto type) {
+      // Deduce type name of column type
       using Type = typename decltype(type)::type;
       const auto comparator = get_comparator<Type>(_scan_type);
-      const auto search_value = type_cast<Type>(_search_value);
+      const auto typed_search_value = type_cast<Type>(_search_value);
 
-      const auto segment_count = chunk_count;
-      for (ChunkID chunk_index = ChunkID(0); chunk_index < segment_count; chunk_index++) {
-        const auto& segment = segments[chunk_index];
+      for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
+        const auto& segment = input_segments[chunk_index];
         // might be ValueSegment TODO or other segment
         const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment);
         if (value_segment != nullptr) {
@@ -80,7 +84,7 @@ namespace opossum {
           const auto value_count = values.size();
           for(auto value_id = ValueID(0); value_id < value_count; value_id++) {
             const Type& value = values[value_id];
-            if (comparator(value, search_value)) {
+            if (comparator(value, typed_search_value)) {
               pos_list->emplace_back(chunk_index, value_id);
             }
           }
@@ -90,18 +94,19 @@ namespace opossum {
           // 
           // push_back ReferenceSegment based on PosList
           if (!pos_list->empty()) {
-            const auto& table = output; // TODO use acutal original table to avoid indirection
+            const auto& table = input_table; // TODO use acutal original table to avoid indirection
             referenceSegments.emplace_back(table, _column_id, pos_list);
           }
         }
       }
     });
 
-    auto table = std::make_shared<Table>(output->max_chunk_size());
-    for (ChunkID chunk_index = ChunkID(0); chunk_index < chunk_count; chunk_index++) {
-      const auto chunk = Chunk();
-      table->emplace_chunk(chunk);
+    auto result_table = std::make_shared<Table>(input_table->max_chunk_size());
+    for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; chunk_index++) {
+      const auto chunk = std::make_shared<Chunk>();
+      result_table->emplace_chunk(chunk);
     }
+    return result_table;
   }
 
   template <typename T>
