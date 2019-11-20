@@ -29,9 +29,10 @@ class TableScan : public AbstractOperator {
   std::shared_ptr<const Table> _on_execute() override;
 
   template <typename T>
-  class TableScanImpl : public TableScan {
+  class TableScanImpl : public AbstractOperator {
     public:
-      TableScanImpl(const TableScan& table_scan);
+      explicit TableScanImpl(const TableScan& table_scan);
+  protected:
       std::shared_ptr<const Table> _on_execute();
     private:
       const TableScan& _parent;
@@ -41,10 +42,6 @@ class TableScan : public AbstractOperator {
   const ColumnID _column_id;
   const ScanType _scan_type;
   const AllTypeVariant _search_value;
-
-  const std::unique_ptr<TableScanImpl<AllTypeVariant>> _implementation;
-
-  std::unique_ptr<TableScanImpl<AllTypeVariant>> make_implementation(const AllTypeVariant &search_value);
 };
 
 }  // namespace opossum

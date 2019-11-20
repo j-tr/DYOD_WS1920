@@ -30,7 +30,7 @@ class ReferenceSegment : public BaseSegment {
 
   size_t size() const override;
 
-  size_t estimate_memory_usage() const;
+  size_t estimate_memory_usage() const override;
 
   const std::shared_ptr<const PosList> pos_list() const;
   const std::shared_ptr<const Table> referenced_table() const;
