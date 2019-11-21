@@ -125,8 +125,10 @@ class DictionarySegment : public BaseSegment {
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
   std::shared_ptr<BaseAttributeVector> _attribute_vector;
+
  private:
-  std::shared_ptr<BaseAttributeVector> _create_fix_sized_attribute_vector(const size_t dict_size, const size_t value_segment_size) {
+  std::shared_ptr<BaseAttributeVector> _create_fix_sized_attribute_vector(const size_t dict_size,
+                                                                          const size_t value_segment_size) {
     if (dict_size <= std::numeric_limits<uint8_t>::max()) {
       return std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment_size);
     } else if (dict_size <= std::numeric_limits<uint16_t>::max()) {
