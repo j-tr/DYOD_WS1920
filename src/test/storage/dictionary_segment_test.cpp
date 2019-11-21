@@ -73,15 +73,6 @@ TEST_F(StorageDictionarySegmentTest, CorrectAttributeVectorWidth) {
   col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
   dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
   EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint16_t));
-
-  /*  takes too long
-  // append 2 ^ 16 more values
-  for (int i = 0; i <= 65536; i++) vc_int->append(i);
-
-  col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
-  dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
-  EXPECT_EQ(dict_col->attribute_vector()->width(), sizeof(uint32_t));
-  */
 }
 
 TEST_F(StorageDictionarySegmentTest, ImmutableAppendTest) {
@@ -96,7 +87,7 @@ TEST_F(StorageDictionarySegmentTest, ImmutableAppendTest) {
   auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<std::string>>(col);
 
   // Test that appends to dictionary do nothing
-  dict_col->append("Juergen");
+  ASSERT_THROW(dict_col->append("Juergen"), std::exception);
   EXPECT_EQ(dict_col->unique_values_count(), 4u);
   auto const last_element = (*dict_col)[opossum::ChunkOffset(dict_col->size() - 1)];
   EXPECT_TRUE(boost::get<std::string>(last_element) == "Bill");

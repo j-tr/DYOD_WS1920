@@ -46,7 +46,7 @@ class DictionarySegment : public BaseSegment {
     _attribute_vector = _create_fix_sized_attribute_vector(_dictionary->size(), value_segment->size());
 
     // for each entry in the segment
-    for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
+    for (ChunkOffset segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
       const ValueID& dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
       DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
@@ -61,19 +61,19 @@ class DictionarySegment : public BaseSegment {
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     PerformanceWarning("operator[] used");
 
-    auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary->at(valueID);
+    auto value_id = _attribute_vector->get(chunk_offset);
+    return _dictionary->at(value_id);
   }
 
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
-    auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary->at(valueID);
+    auto value_id = _attribute_vector->get(chunk_offset);
+    return _dictionary->at(value_id);
   }
 
   // dictionary segments are immutable
   void append(const AllTypeVariant&) override {
-    // do nothing
+    throw std::runtime_error("Tried to append but Dictionary Segments are immutable");
   }
 
   // returns an underlying dictionary
