@@ -43,13 +43,7 @@ class DictionarySegment : public BaseSegment {
     _dictionary->erase(last, _dictionary->end());
 
     // create Attribute Vector with the most fitting width
-    if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()) {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment->size());
-    } else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()) {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(value_segment->size());
-    } else {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(value_segment->size());
-    }
+    _attribute_vector = _create_fix_sized_attribute_vector(_dictionary->size(), value_segment->size());
 
     // for each entry in the segment
     for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
@@ -74,7 +68,7 @@ class DictionarySegment : public BaseSegment {
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
     auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary.at(valueID);
+    return _dictionary->at(valueID);
   }
 
   // dictionary segments are immutable
@@ -131,6 +125,16 @@ class DictionarySegment : public BaseSegment {
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
   std::shared_ptr<BaseAttributeVector> _attribute_vector;
+ private:
+  std::shared_ptr<BaseAttributeVector> _create_fix_sized_attribute_vector(const size_t dict_size, const size_t value_segment_size) {
+    if (dict_size <= std::numeric_limits<uint8_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment_size);
+    } else if (dict_size <= std::numeric_limits<uint16_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<uint16_t>>(value_segment_size);
+    } else {
+      return std::make_shared<FixedSizeAttributeVector<uint32_t>>(value_segment_size);
+    }
+  }
 };
 
 }  // namespace opossum
