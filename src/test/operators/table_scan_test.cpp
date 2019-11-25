@@ -31,8 +31,8 @@ class OperatorsTableScanTest : public BaseTest {
     test_even_dict->add_column("b", "int");
     for (int i = 0; i <= 24; i += 2) test_even_dict->append({i, 100 + i});
 
-    //test_even_dict->compress_chunk(ChunkID(0));
-    //test_even_dict->compress_chunk(ChunkID(1));
+    test_even_dict->compress_chunk(ChunkID(0));
+    test_even_dict->compress_chunk(ChunkID(1));
 
     _table_wrapper_even_dict = std::make_shared<TableWrapper>(std::move(test_even_dict));
     _table_wrapper_even_dict->execute();
@@ -104,12 +104,8 @@ class OperatorsTableScanTest : public BaseTest {
 TEST_F(OperatorsTableScanTest, DoubleScan) {
   std::shared_ptr<Table> expected_result = load_table("src/test/tables/int_float_filtered.tbl", 2);
 
-  std::make_shared<Print>(_table_wrapper)->execute();
-
   auto scan_1 = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpGreaterThanEquals, 1234);
   scan_1->execute();
-
-  std::make_shared<Print>(scan_1)->execute();
 
   auto scan_2 = std::make_shared<TableScan>(scan_1, ColumnID{1}, ScanType::OpLessThan, 457.9);
   scan_2->execute();

@@ -15,7 +15,7 @@ ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> referenced
 }
 
 AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) const {
-  Assert(chunk_offset <= size(), "Operator []: The referenced value does not exist");
+  Assert(chunk_offset < size(), "Operator []: The referenced value does not exist");
   auto& chunk = referenced_table()->get_chunk(pos_list()->at(chunk_offset).chunk_id);
   auto column = chunk.get_segment(referenced_column_id());
   return (*column)[pos_list()->at(chunk_offset).chunk_offset];

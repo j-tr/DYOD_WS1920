@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "abstract_operator.hpp"
+#include "storage/value_segment.hpp"
+#include "storage/dictionary_segment.hpp"
 #include "all_type_variant.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
@@ -24,6 +26,12 @@ class TableScan : public AbstractOperator {
   ColumnID column_id() const;
   ScanType scan_type() const;
   const AllTypeVariant& search_value() const;
+
+  template <typename T>
+  std::vector<ChunkOffset> scan(std::shared_ptr<ValueSegment<T>> value_segment, std::function<bool (T, T)> comparator, const T search_value, std::vector<ChunkOffset> input_filter) const;
+
+  template <typename T>
+  std::vector<ChunkOffset> scan(std::shared_ptr<DictionarySegment<T>> dictionary_segment, std::function<bool (T, T)> comparator, const T search_value, std::vector<ChunkOffset> input_filter) const;
 
  protected:
   std::shared_ptr<const Table> _on_execute() override;

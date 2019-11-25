@@ -28,6 +28,7 @@ std::shared_ptr<const Table> Print::_on_execute() {
 
   auto widths = column_string_widths(8, 20, _input_table_left());
 
+  std::cout << "still there" << std::endl;
   // print column headers
   _out << "=== Columns" << std::endl;
   for (ColumnID column_id{0}; column_id < _input_table_left()->column_count(); ++column_id) {
@@ -39,6 +40,7 @@ std::shared_ptr<const Table> Print::_on_execute() {
   }
   _out << "|" << std::endl;
 
+  std::cout << "still there" << std::endl;
   // print each chunk
   for (ChunkID chunk_id{0}; chunk_id < _input_table_left()->chunk_count(); ++chunk_id) {
     const auto& chunk = _input_table_left()->get_chunk(chunk_id);
@@ -50,6 +52,7 @@ std::shared_ptr<const Table> Print::_on_execute() {
       continue;
     }
 
+    std::cout << "still there" << std::endl;
     // print the rows in the chunk
     for (size_t row = 0; row < chunk.size(); ++row) {
       _out << "|";
@@ -70,24 +73,28 @@ std::shared_ptr<const Table> Print::_on_execute() {
 // number of characters in the printed representation of each column
 // `min` and `max` can be used to limit the width of the columns - however, every column fits at least the column's name
 std::vector<uint16_t> Print::column_string_widths(uint16_t min, uint16_t max, std::shared_ptr<const Table> t) const {
+  std::cout << "still there" << std::endl;
   std::vector<uint16_t> widths(t->column_count());
   // calculate the length of the column name
   for (ColumnID column_id{0}; column_id < t->column_count(); ++column_id) {
     widths[column_id] = std::max(min, static_cast<uint16_t>(t->column_name(column_id).size()));
   }
-
+  std::cout << "still there" << std::endl;
   // go over all rows and find the maximum length of the printed representation of a value, up to max
   for (ChunkID chunk_id{0}; chunk_id < _input_table_left()->chunk_count(); ++chunk_id) {
     auto& chunk = _input_table_left()->get_chunk(chunk_id);
-
+    std::cout << "still there 2" << std::endl;
     for (ColumnID column_id{0}; column_id < chunk.column_count(); ++column_id) {
       for (size_t row = 0; row < chunk.size(); ++row) {
+        std::cout << "still there 3" << std::endl;
         auto cell_length =
             static_cast<uint16_t>(boost::lexical_cast<std::string>((*chunk.get_segment(column_id))[row]).size());
+        std::cout << "still there 4" << std::endl;
         widths[column_id] = std::max({min, widths[column_id], std::min(max, cell_length)});
       }
     }
   }
+  std::cout << "still there" << std::endl;
   return widths;
 }
 

@@ -19,7 +19,7 @@ ValueSegment<T>::ValueSegment() : _values{std::vector<T>()} {}
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
   PerformanceWarning("operator[] used");
-
+  DebugAssert(chunk_offset < size(), "ChunkOffset out of range");
   return _values.at(chunk_offset);
 }
 

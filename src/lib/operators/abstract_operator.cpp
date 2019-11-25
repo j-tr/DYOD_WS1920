@@ -14,8 +14,7 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
                                    const std::shared_ptr<const AbstractOperator> right)
     : _input_left(left), _input_right(right) {}
 
-void AbstractOperator::execute() { _output = _on_execute(); 
-std::cout << "output table columns: " << _output->column_count() << std::endl;}
+void AbstractOperator::execute() { _output = _on_execute(); }
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
   // TODO(anyone): You should place some meaningful checks here

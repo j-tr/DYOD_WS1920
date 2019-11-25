@@ -118,7 +118,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
   };
 
   // start thread for each segment
-  for (ColumnID column_id(0); column_id < chunk.size(); ++column_id) {
+  for (ColumnID column_id(0); column_id < chunk.column_count(); ++column_id) {
     std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
     std::string type = column_type(column_id);
     threads.push_back(std::thread(compress, type, segment, column_id));
