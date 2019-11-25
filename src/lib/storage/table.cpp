@@ -133,7 +133,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
 
   // replace uncompressed chunk by compressed chunk
   std::unique_lock write_lock(*_chunk_access);
-  chunk = std::move(dictionary_chunk);
+  chunk = std::move(dictionary_chunk);  // does this actually do anything?
 }
 
 void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {

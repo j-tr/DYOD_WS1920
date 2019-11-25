@@ -99,7 +99,7 @@ namespace opossum {
   std::shared_ptr<const Table> TableScan::_on_execute() {
         
     // Get input table
-    const auto input_table = _in->get_output();
+    const std::shared_ptr<const Table> input_table = _in->get_output();
 
     // get chunk count
     const ChunkID input_chunk_count = input_table->chunk_count();
@@ -141,6 +141,7 @@ namespace opossum {
           for (ChunkOffset chunk_offset : output_filter) {
             pos_list->push_back(RowID{chunk_index, chunk_offset});
           }
+<<<<<<< HEAD
         } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
           // if segment is reference segment
           // extract chunk_offsets for each referemced segment
