@@ -48,7 +48,7 @@ namespace opossum {
   std::shared_ptr<const Table> TableScan::_on_execute() {
         
     // Get input table
-    const auto input_table = _in->get_output();
+    const std::shared_ptr<const Table> input_table = _in->get_output();
 
     // get chunk count
     const ChunkID input_chunk_count = input_table->chunk_count();
@@ -82,9 +82,30 @@ namespace opossum {
               pos_list->emplace_back(chunk_index, value_id);
             }
           }
-        } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
+        } else if (const std::shared_ptr<DictionarySegment<Type>> dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment)){
           std::cout << "Implement me!" << std::endl;
-        }
+          /*const ValueID search_vid = dictionary_segment->lower_bound(typed_search_value);
+          const std::shared_ptr<const BaseAttributeVector> av = dictionary_segment->();
+          const auto chunk_size = av->size();
+          for(size_t chunk_offset = 0; chunk_offset < chunk_size; chunk_offset++) {
+            const auto col_vid = av->get(chunk_offset);  // TODO replace by more direct access
+            if (comparator(col_vid, search_vid)) {
+              pos_list->emplace_back(chunk_index, chunk_offset);
+            }
+          }*/
+
+        } /*else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
+          std::cout << "Implement me!" << std::endl;
+          const auto positions = reference_segment->pos_list();
+          const auto positions_count = positions->size();
+          for(auto& row_id : *positions) {
+
+            const Type& value = values[value_id];
+            if (comparator(value, typed_search_value)) {
+              pos_list->emplace_back(chunk_index, value_id);
+            }
+          }
+        }*/
       }
     });
 
