@@ -193,6 +193,21 @@ namespace opossum {
     }
   }
 
+  template <typename T>  
+  ValueID TableScan::_search_value_id_for_value(const std::shared_ptr<DictionarySegment<T>> dictionary_segment, const T typed_search_value) {
+    switch (_scan_type) {
+      case ScanType::OpEquals:
+      case ScanType::OpNotEquals:
+      case ScanType::OpLessThanEquals:
+      case ScanType::OpLessThan:
+      case ScanType::OpGreaterThan:
+      case ScanType::OpGreaterThanEquals:
+         return dictionary_segment->lower_bound(typed_search_value);
+      default:
+        throw std::runtime_error("ScanType is not defined");
+    }
+  }
+
   template <typename T>
   void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list,
                                            const std::function<bool(ValueID, ValueID)> &comparator,

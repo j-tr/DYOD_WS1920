@@ -145,6 +145,8 @@ TEST_F(OperatorsTableScanTest, ScanOnDictColumn) {
     auto scan = std::make_shared<TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 4);
     scan->execute();
 
+    std::cout << "test" << std::endl;
+    
     ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
   }
 }
