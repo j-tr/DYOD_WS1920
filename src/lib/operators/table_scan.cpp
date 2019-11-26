@@ -158,26 +158,7 @@ namespace opossum {
                                    input_filter);
         } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
           // if segment is reference segment
-          // extract chunk_offsets for each referemced segment
-          for (auto position_iterator = reference_segment->pos_list()->begin(); position_iterator < reference_segment->pos_list()->end();){
-            
-            ChunkID referenced_chunk_id = position_iterator->chunk_id;
-            std::vector<ChunkOffset> input_filter;
-            auto chunk_position_iterator = position_iterator;
-            for (; chunk_position_iterator->chunk_id == position_iterator->chunk_id; chunk_position_iterator++){
-              input_filter.push_back(chunk_position_iterator->chunk_offset);
-            }
-            position_iterator = chunk_position_iterator;
-
-            auto referenced_segment = reference_segment->referenced_table()->get_chunk(referenced_chunk_id).get_segment(_column_id);
-            if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(referenced_segment)){
-              // if referenced segment is value segment
-              _scan_value_segment(pos_list, comparator, typed_search_value, referenced_chunk_id, value_segment, input_filter);
-            } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(referenced_segment)){
-              // if referenced segment is dictionary segment
-              _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, referenced_chunk_id, dictionary_segment, input_filter);
-            }   
-          }
+          _scan_reference_segment(pos_list, comparator, typed_search_value, reference_segment);
         }
       }
     });
@@ -192,6 +173,35 @@ namespace opossum {
 
     result_table->emplace_chunk(chunk);
     return result_table;
+  }
+
+  template <typename T>
+  void TableScan::_scan_reference_segment(const std::shared_ptr<PosList> &pos_list,
+                                          const std::function<bool(T, T)> &comparator,
+                                          const T typed_search_value,
+                                          const std::shared_ptr<ReferenceSegment> &reference_segment) const {
+    // extract chunk_offsets for each referenced segment
+    for (auto position_iterator = reference_segment->pos_list()->begin(); position_iterator < reference_segment->pos_list()->end();){
+
+      ChunkID referenced_chunk_id = position_iterator->chunk_id;
+      std::__1::vector<ChunkOffset> input_filter;
+      auto chunk_position_iterator = position_iterator;
+      for (; chunk_position_iterator->chunk_id == position_iterator->chunk_id; chunk_position_iterator++){
+        input_filter.push_back(chunk_position_iterator->chunk_offset);
+      }
+      position_iterator = chunk_position_iterator;
+
+      auto referenced_segment = reference_segment->referenced_table()->get_chunk(referenced_chunk_id).get_segment(
+              _column_id);
+      if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(referenced_segment)){
+        // if referenced segment is value segment
+        _scan_value_segment(pos_list, comparator, typed_search_value, referenced_chunk_id, value_segment, input_filter);
+      } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(referenced_segment)){
+        // if referenced segment is dictionary segment
+        _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value,
+                referenced_chunk_id, dictionary_segment, input_filter);
+      }
+    }
   }
 
   template <typename T>
