@@ -152,7 +152,7 @@ namespace opossum {
     for (auto position_iterator = reference_segment->pos_list()->begin(); position_iterator < reference_segment->pos_list()->end();){
 
       ChunkID referenced_chunk_id = position_iterator->chunk_id;
-      std::__1::vector<ChunkOffset> input_filter;
+      std::vector<ChunkOffset> input_filter;
       auto chunk_position_iterator = position_iterator;
       for (; chunk_position_iterator->chunk_id == position_iterator->chunk_id; chunk_position_iterator++){
         input_filter.push_back(chunk_position_iterator->chunk_offset);
