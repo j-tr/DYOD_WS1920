@@ -13,10 +13,16 @@ class FixedSizeAttributeVector : public BaseAttributeVector {
   explicit FixedSizeAttributeVector(const size_t size) { _attribute_vector = std::vector<T>(size); }
 
   // returns the value id at a given position
-  ValueID get(const size_t i) const override { return ValueID(_attribute_vector.at(i)); }
+  ValueID get(const size_t i) const override {
+    DebugAssert(i < size(), "Attribute Vector index out of range");
+    return ValueID(_attribute_vector[i]);
+  }
 
   // sets the value id at a given position
-  void set(const size_t i, const ValueID value_id) override { _attribute_vector[i] = value_id; }
+  void set(const size_t i, const ValueID value_id) override {
+    DebugAssert(i < size(), "Attribute Vector index out of range");
+    _attribute_vector[i] = value_id;
+  }
 
   // returns the number of values
   size_t size() const override { return _attribute_vector.size(); }
