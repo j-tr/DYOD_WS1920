@@ -152,7 +152,7 @@ namespace opossum {
           _scan_value_segment(pos_list, comparator, typed_search_value, chunk_index, value_segment, input_filter);
         } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment)){
           // if segment is dictionary segment
-          std::vector<ChunkOffset> input_filter(value_segment->size());
+          std::vector<ChunkOffset> input_filter(dictionary_segment->size());
           std::iota(input_filter.begin(), input_filter.end(), 0);
           _scan_dictionary_segment<Type>(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment,
                                    input_filter);
