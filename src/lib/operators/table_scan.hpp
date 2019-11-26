@@ -31,7 +31,10 @@ class TableScan : public AbstractOperator {
   std::vector<ChunkOffset> scan(std::shared_ptr<ValueSegment<T>> value_segment, std::function<bool (T, T)> comparator, const T search_value, std::vector<ChunkOffset> input_filter) const;
 
   template <typename T>
-  std::vector<ChunkOffset> scan(std::shared_ptr<DictionarySegment<T>> dictionary_segment, std::function<bool (T, T)> comparator, const ValueID search_value_id, std::vector<ChunkOffset> input_filter) const;
+  std::vector<ChunkOffset> scan(const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
+  const std::function<bool (ValueID, ValueID)> comparator,
+  const ValueID search_value_id,
+  const std::vector<ChunkOffset> input_filter) const;
 
  protected:
   std::shared_ptr<const Table> _on_execute() override;
@@ -49,7 +52,7 @@ class TableScan : public AbstractOperator {
                                  const std::vector<ChunkOffset>& input_filter) const;
 
   template <typename T>
-  void _scan_dictionary_segment(const std::shared_ptr<PosList>& pos_list, const std::function<bool(T, T)>& comparator,
+  void _scan_dictionary_segment(const std::shared_ptr<PosList>& pos_list, const std::function<bool(ValueID, ValueID)>& comparator,
                                 const T typed_search_value,
                                 const ChunkID& chunk_index, const std::shared_ptr<DictionarySegment<T>>& dictionary_segment,
                                 const std::vector<ChunkOffset>& input_filter) const;

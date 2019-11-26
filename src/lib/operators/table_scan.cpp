@@ -39,7 +39,7 @@ namespace /* anonymous */ {
     }
   }
 
-/*
+
   template <>
   std::function<bool (std::string, std::string)> get_comparator(ScanType type) { // std::function<bool(T, T)>
       switch (type) {
@@ -58,7 +58,7 @@ namespace /* anonymous */ {
       default:
         throw std::runtime_error("ScanType is not defined");
     }
-  }*/
+  }
 
   bool use_upper_bound(ScanType type) {
     switch (type) {
@@ -101,7 +101,7 @@ namespace opossum {
   template <typename T>
   std::vector<ChunkOffset> TableScan::scan(
           const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
-          const std::function<bool (T, T)> comparator,
+          const std::function<bool (ValueID, ValueID)> comparator,
           const ValueID search_value_id,
           const std::vector<ChunkOffset> input_filter) const{
     std::vector<ChunkOffset> output_filter;
@@ -150,7 +150,7 @@ namespace opossum {
           // if segment is dictionary segment
           std::vector<ChunkOffset> input_filter(value_segment->size());
           std::iota(input_filter.begin(), input_filter.end(), 0);
-          _scan_dictionary_segment(pos_list, comparator, typed_search_value, chunk_index, dictionary_segment,
+          _scan_dictionary_segment<Type>(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment,
                                    input_filter);
         } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
           // if segment is reference segment
@@ -171,7 +171,7 @@ namespace opossum {
               _scan_value_segment(pos_list, comparator, typed_search_value, chunk_index, value_segment, input_filter);
             } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(referenced_segment)){
               // if referenced segment is dictionary segment
-              _scan_dictionary_segment(pos_list, comparator, typed_search_value, chunk_index, dictionary_segment, input_filter);
+              _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment, input_filter);
             }   
           }
         }
@@ -208,7 +208,7 @@ namespace opossum {
 
   template <typename T>
   void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> &pos_list,
-                                           const std::function<bool(T, T)> &comparator,
+                                           const std::function<bool(ValueID, ValueID)> &comparator,
                                            const T typed_search_value,
                                            const ChunkID &chunk_index, const std::shared_ptr<DictionarySegment<T>> &dictionary_segment,
                                            const std::vector<ChunkOffset> &input_filter) const {
