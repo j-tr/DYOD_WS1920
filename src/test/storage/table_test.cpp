@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 
 #include "../lib/resolve_type.hpp"
+#include "../lib/storage/dictionary_segment.hpp"
 #include "../lib/storage/table.hpp"
 
 namespace opossum {
@@ -70,5 +71,52 @@ TEST_F(StorageTableTest, GetColumnIdByName) {
 }
 
 TEST_F(StorageTableTest, GetChunkSize) { EXPECT_EQ(t.max_chunk_size(), 2u); }
+
+TEST_F(StorageTableTest, CompressChunk) {
+  t.append({4, "Hello,"});
+  t.append({1, "Hello,"});
+  t.append({6, "world"});
+  t.append({6, "A"});
+
+  t.compress_chunk(ChunkID(0));
+  t.compress_chunk(ChunkID(1));
+
+  auto segment_0_0 =
+      std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(0))));
+  auto segment_0_1 =
+      std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(0)).get_segment(ColumnID(1))));
+  auto segment_1_0 =
+      std::dynamic_pointer_cast<DictionarySegment<int>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(0))));
+  auto segment_1_1 =
+      std::dynamic_pointer_cast<DictionarySegment<std::string>>((t.get_chunk(ChunkID(1)).get_segment(ColumnID(1))));
+
+  // Test dictionary size (uniqueness)
+  EXPECT_EQ(segment_0_0->unique_values_count(), 2u);
+  EXPECT_EQ(segment_0_1->unique_values_count(), 1u);
+  EXPECT_EQ(segment_1_0->unique_values_count(), 1u);
+  EXPECT_EQ(segment_1_1->unique_values_count(), 2u);
+
+  // Test attribute_vector size
+  EXPECT_EQ(segment_0_0->size(), 2u);
+  EXPECT_EQ(segment_0_1->size(), 2u);
+  EXPECT_EQ(segment_1_0->size(), 2u);
+  EXPECT_EQ(segment_1_1->size(), 2u);
+
+  // Test attribute_vector content
+  EXPECT_EQ(segment_0_0->attribute_vector()->get(0), 1);
+  EXPECT_EQ(segment_0_0->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_0_1->attribute_vector()->get(0), 0);
+  EXPECT_EQ(segment_0_1->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_1_0->attribute_vector()->get(0), 0);
+  EXPECT_EQ(segment_1_0->attribute_vector()->get(1), 0);
+  EXPECT_EQ(segment_1_1->attribute_vector()->get(0), 1);
+  EXPECT_EQ(segment_1_1->attribute_vector()->get(1), 0);
+
+  // Test sorting
+  EXPECT_EQ((*(segment_0_0->dictionary()))[0], 1);
+  EXPECT_EQ((*(segment_0_0->dictionary()))[1], 4);
+  EXPECT_EQ((*(segment_1_1->dictionary()))[0], "A");
+  EXPECT_EQ((*(segment_1_1->dictionary()))[1], "world");
+}
 
 }  // namespace opossum

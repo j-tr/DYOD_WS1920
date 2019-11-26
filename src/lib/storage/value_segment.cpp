@@ -34,14 +34,13 @@ size_t ValueSegment<T>::size() const {
 }
 
 template <typename T>
-const std::vector<T>& ValueSegment<T>::values() const {
-  return _values;
+size_t ValueSegment<T>::estimate_memory_usage() const {
+  return size() * sizeof(T);
 }
 
 template <typename T>
-size_t ValueSegment<T>::estimate_memory_usage() const {
-  // Implementation goes here
-  return 0;
+const std::vector<T>& ValueSegment<T>::values() const {
+  return _values;
 }
 
 EXPLICITLY_INSTANTIATE_DATA_TYPES(ValueSegment);

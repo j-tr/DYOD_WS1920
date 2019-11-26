@@ -4,11 +4,14 @@
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "dictionary_segment.hpp"
 #include "value_segment.hpp"
 
 #include "resolve_type.hpp"
@@ -44,18 +47,17 @@ void Table::append(std::vector<AllTypeVariant> values) {
     }
     _chunks.push_back(new_chunk);
   }
-
   _chunks.back()->append(values);
 }
 
 uint16_t Table::column_count() const { return _column_names.size(); }
 
-uint64_t Table::row_count() const { 
+uint64_t Table::row_count() const {
   uint64_t row_count = 0;
-  for (auto& chunk : _chunks){
+  for (auto& chunk : _chunks) {
     row_count += chunk->size();
   }
-  return row_count; 
+  return row_count;
 }
 
 ChunkID Table::chunk_count() const { return ChunkID(_chunks.size()); }
@@ -86,11 +88,43 @@ const std::string& Table::column_type(ColumnID column_id) const {
 
 Chunk& Table::get_chunk(ChunkID chunk_id) {
   DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
+  std::shared_lock read_lock(_chunk_access);
   return *_chunks[chunk_id];
 }
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const { return get_chunk(chunk_id); }
+const Chunk& Table::get_chunk(ChunkID chunk_id) const {
+  DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
+  std::shared_lock read_lock(_chunk_access);
+  return *_chunks[chunk_id];
+}
 
-void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+void Table::compress_chunk(ChunkID chunk_id) {
+  auto& chunk = get_chunk(chunk_id);
+
+  // create structures and lambda function
+  std::vector<std::thread> threads;
+  std::vector<std::shared_ptr<BaseSegment>> compressed_segments(chunk.column_count());
+  auto compress = [&compressed_segments](auto type, auto segment, auto segment_id) {
+    compressed_segments.at(segment_id) = make_shared_by_data_type<BaseSegment, DictionarySegment>(type, segment);
+  };
+
+  // start thread for each segment
+  for (size_t column_index = 0; column_index < chunk.size(); ++column_index) {
+    std::shared_ptr<BaseSegment> segment = chunk.get_segment(ColumnID(column_index));
+    std::string type = column_type(ColumnID(column_index));
+    threads.push_back(std::thread(compress, type, segment, column_index));
+  }
+
+  // join threads and add segment to chunk
+  Chunk dictionary_chunk;
+  for (size_t thread_id = 0; thread_id < threads.size(); ++thread_id) {
+    threads[thread_id].join();
+    dictionary_chunk.add_segment(compressed_segments.at(thread_id));
+  }
+
+  // replace uncompressed chunk by compressed chunk
+  std::unique_lock write_lock(_chunk_access);
+  chunk = std::move(dictionary_chunk);
+}
 
 }  // namespace opossum
