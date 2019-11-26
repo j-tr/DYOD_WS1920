@@ -31,7 +31,7 @@ class TableScan : public AbstractOperator {
   std::vector<ChunkOffset> scan(std::shared_ptr<ValueSegment<T>> value_segment, std::function<bool (T, T)> comparator, const T search_value, std::vector<ChunkOffset> input_filter) const;
 
   template <typename T>
-  std::vector<ChunkOffset> scan(std::shared_ptr<DictionarySegment<T>> dictionary_segment, std::function<bool (T, T)> comparator, const T search_value, std::vector<ChunkOffset> input_filter) const;
+  std::vector<ChunkOffset> scan(std::shared_ptr<DictionarySegment<T>> dictionary_segment, std::function<bool (T, T)> comparator, const ValueID search_value_id, std::vector<ChunkOffset> input_filter) const;
 
  protected:
   std::shared_ptr<const Table> _on_execute() override;
