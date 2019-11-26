@@ -141,17 +141,7 @@ namespace opossum {
         const auto& segment = input_table->get_chunk(chunk_index).get_segment(_column_id);
         
         if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment)){
-          // if segment is value segment
-          // create a PosList-equivalent vector with every possible chunk_offset
-          std::vector<ChunkOffset> input_filter(value_segment->size());
-          // fill the input_filter vector with sequentially increasing values
-          std::iota(input_filter.begin(), input_filter.end(), 0);
-          auto output_filter = scan(value_segment, comparator, typed_search_value, input_filter);
-          // TODO comment: why are we taking into account the initial pos_list->size()?
-          pos_list->reserve(pos_list->size() + output_filter.size());
-          for (ChunkOffset chunk_offset : output_filter) {
-            pos_list->push_back(RowID{chunk_index, chunk_offset});
-          }
+          _scan_value_segment(pos_list, comparator, typed_search_value, chunk_index, value_segment);
         } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment)){
           // if segment is dictionary segment
           std::vector<ChunkOffset> input_filter(value_segment->size());
@@ -211,6 +201,24 @@ namespace opossum {
 
     result_table->emplace_chunk(chunk);
     return result_table;
+  }
+
+  template <typename T>
+  void
+  TableScan::_scan_value_segment(const std::shared_ptr<PosList>& pos_list, const std::function<bool(T, T)>& comparator,
+                                 const T typed_search_value,
+                                 const ChunkID& chunk_index,
+                                 const std::shared_ptr<ValueSegment<T>>& value_segment) const {
+    // create a PosList-equivalent vector with every possible chunk_offset
+    std::vector<ChunkOffset> input_filter(value_segment->size());
+    // fill the input_filter vector with sequentially increasing values
+    std::iota(input_filter.begin(), input_filter.end(), 0);
+    auto output_filter = scan(value_segment, comparator, typed_search_value, input_filter);
+    // TODO comment: why are we taking into account the initial pos_list->size()?
+    pos_list->reserve(pos_list->size() + output_filter.size());
+    for (ChunkOffset chunk_offset : output_filter) {
+      pos_list->push_back(RowID{chunk_index, chunk_offset});
+    }
   }
 
 }  // namespace opossum
