@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "../base_test.hpp"
 #include "gtest/gtest.h"
 
 #include "operators/abstract_operator.hpp"
@@ -91,5 +92,4 @@ TEST_F(ReferenceSegmentTest, RetrievesValuesFromChunks) {
   EXPECT_EQ(reference_segment[0], column_1[2]);
   EXPECT_EQ(reference_segment[2], column_2[1]);
 }
-
 }  // namespace opossum
