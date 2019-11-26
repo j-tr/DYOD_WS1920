@@ -176,10 +176,10 @@ namespace opossum {
   }
 
   template <typename T>
-  void TableScan::_scan_reference_segment(const std::shared_ptr<PosList> &pos_list,
+  void TableScan::_scan_reference_segment(const std::shared_ptr<PosList> pos_list,
                                           const std::function<bool(T, T)> &comparator,
                                           const T typed_search_value,
-                                          const std::shared_ptr<ReferenceSegment> &reference_segment) const {
+                                          const std::shared_ptr<ReferenceSegment> reference_segment) const {
     // extract chunk_offsets for each referenced segment
     for (auto position_iterator = reference_segment->pos_list()->begin(); position_iterator < reference_segment->pos_list()->end();){
 
@@ -205,11 +205,11 @@ namespace opossum {
   }
 
   template <typename T>
-  void TableScan::_scan_value_segment(const std::shared_ptr<PosList>& pos_list, 
+  void TableScan::_scan_value_segment(const std::shared_ptr<PosList> pos_list,
                                       const std::function<bool(T, T)>& comparator,
                                       const T typed_search_value,
                                       const ChunkID& chunk_index,
-                                      const std::shared_ptr<ValueSegment<T>>& value_segment,
+                                      const std::shared_ptr<ValueSegment<T>> value_segment,
                                       const std::vector<ChunkOffset>& input_filter) const {
 
     auto output_filter = scan(value_segment, comparator, typed_search_value, input_filter);
@@ -221,10 +221,11 @@ namespace opossum {
   }
 
   template <typename T>
-  void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> &pos_list,
+  void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list,
                                            const std::function<bool(ValueID, ValueID)> &comparator,
                                            const T typed_search_value,
-                                           const ChunkID &chunk_index, const std::shared_ptr<DictionarySegment<T>> &dictionary_segment,
+                                           const ChunkID &chunk_index,
+                                           const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
                                            const std::vector<ChunkOffset> &input_filter) const {
     ValueID search_value_id = use_upper_bound(_scan_type) ?
                         dictionary_segment->upper_bound(typed_search_value) :

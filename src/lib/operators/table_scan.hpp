@@ -46,23 +46,23 @@ class TableScan : public AbstractOperator {
   const AllTypeVariant _search_value;
 
   template <typename T>
-  void _scan_value_segment(const std::shared_ptr<PosList>& pos_list, const std::function<bool(T, T)>& comparator,
+  void _scan_value_segment(const std::shared_ptr<PosList> pos_list, const std::function<bool(T, T)>& comparator,
                                  const T typed_search_value,
                                  const ChunkID& chunk_index,
-                                 const std::shared_ptr<ValueSegment<T>>& value_segment,
+                                 const std::shared_ptr<ValueSegment<T>> value_segment,
                                  const std::vector<ChunkOffset>& input_filter) const;
 
   template <typename T>
-  void _scan_dictionary_segment(const std::shared_ptr<PosList>& pos_list, const std::function<bool(ValueID, ValueID)>& comparator,
+  void _scan_dictionary_segment(const std::shared_ptr<PosList> pos_list, const std::function<bool(ValueID, ValueID)>& comparator,
                                 const T typed_search_value,
-                                const ChunkID& chunk_index, const std::shared_ptr<DictionarySegment<T>>& dictionary_segment,
+                                const ChunkID& chunk_index, const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
                                 const std::vector<ChunkOffset>& input_filter) const;
 
   template <typename T>
-  void _scan_reference_segment(const std::shared_ptr<PosList>& pos_list,
+  void _scan_reference_segment(const std::shared_ptr<PosList> pos_list,
                                const std::function<bool(T, T)>& comparator,
                                const T typed_search_value,
-                               const std::shared_ptr<ReferenceSegment>& reference_segment) const;
+                               const std::shared_ptr<ReferenceSegment> reference_segment) const;
 };
 
 }  // namespace opossum
