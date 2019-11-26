@@ -58,22 +58,6 @@ namespace /* anonymous */ {
         throw std::runtime_error("ScanType is not defined");
     }
   }
-
-/*
-  bool use_upper_bound(ScanType type) {
-    switch (type) {
-      case ScanType::OpEquals:
-      case ScanType::OpNotEquals:
-      case ScanType::OpLessThan:
-      case ScanType::OpLessThanEquals:
-        return false;
-      case ScanType::OpGreaterThan:
-      case ScanType::OpGreaterThanEquals:
-        return true;
-      default:
-        throw std::runtime_error("ScanType is not defined");
-    }
-  }*/
 }
 
 namespace opossum {
@@ -200,12 +184,13 @@ namespace opossum {
                                            const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
                                            const std::vector<ChunkOffset> &input_filter) const {
     std::vector<ChunkOffset> output_filter;
-     
+    auto dictionary = dictionary_segment->dictionary();
+    auto attribute_vector = dictionary_segment->attribute_vector();
+    
     if (_scan_type == ScanType::OpNotEquals || _scan_type == ScanType::OpEquals){
       ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
-      if (search_value_id != INVALID_VALUE_ID && (dictionary_segment->dictionary()->at(dictionary_segment->attribute_vector()->get(search_value_id)) == typed_search_value)) {
+      if (search_value_id != INVALID_VALUE_ID && (dictionary->at(attribute_vector->get(search_value_id)) == typed_search_value)) {
         auto comparator = get_comparator<ValueID>(_scan_type);
-        auto attribute_vector = dictionary_segment->attribute_vector();
         for(auto chunk_offset : input_filter) {
           if (comparator(attribute_vector->get(chunk_offset), search_value_id)) {
             output_filter.push_back(chunk_offset);
@@ -221,7 +206,6 @@ namespace opossum {
       ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
         auto comparator = get_comparator<ValueID>(_scan_type);
-        auto attribute_vector = dictionary_segment->attribute_vector();
         for(auto chunk_offset : input_filter) {
           if (comparator(attribute_vector->get(chunk_offset), search_value_id)) {
             output_filter.push_back(chunk_offset);
@@ -236,7 +220,6 @@ namespace opossum {
     } else if (_scan_type == ScanType::OpGreaterThan){
       ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
-        auto attribute_vector = dictionary_segment->attribute_vector();
         for(auto chunk_offset : input_filter) {
           if (attribute_vector->get(chunk_offset) >= search_value_id) {
             output_filter.push_back(chunk_offset);
@@ -246,7 +229,6 @@ namespace opossum {
     } else if (_scan_type == ScanType::OpLessThanEquals) {
       ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
-        auto attribute_vector = dictionary_segment->attribute_vector();
         for(auto chunk_offset : input_filter) {
           if (attribute_vector->get(chunk_offset) < search_value_id) {
             output_filter.push_back(chunk_offset);
