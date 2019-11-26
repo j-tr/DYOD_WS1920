@@ -39,7 +39,6 @@ namespace /* anonymous */ {
     }
   }
 
-
   template <>
   std::function<bool (std::string, std::string)> get_comparator(ScanType type) { // std::function<bool(T, T)>
       switch (type) {
@@ -60,6 +59,7 @@ namespace /* anonymous */ {
     }
   }
 
+/*
   bool use_upper_bound(ScanType type) {
     switch (type) {
       case ScanType::OpEquals:
@@ -73,7 +73,7 @@ namespace /* anonymous */ {
       default:
         throw std::runtime_error("ScanType is not defined");
     }
-  }
+  }*/
 }
 
 namespace opossum {
@@ -122,7 +122,7 @@ namespace opossum {
           // if segment is dictionary segment
           std::vector<ChunkOffset> input_filter(dictionary_segment->size());
           std::iota(input_filter.begin(), input_filter.end(), 0);
-          _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment,
+          _scan_dictionary_segment(pos_list, typed_search_value, chunk_index, dictionary_segment,
                                    input_filter);
         } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
           // if segment is reference segment
@@ -166,7 +166,7 @@ namespace opossum {
         _scan_value_segment(pos_list, comparator, typed_search_value, referenced_chunk_id, value_segment, input_filter);
       } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(referenced_segment)){
         // if referenced segment is dictionary segment
-        _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value,
+        _scan_dictionary_segment(pos_list, typed_search_value,
                 referenced_chunk_id, dictionary_segment, input_filter);
       }
     }
@@ -193,37 +193,71 @@ namespace opossum {
     }
   }
 
-  template <typename T>  
-  ValueID TableScan::_search_value_id_for_value(const std::shared_ptr<DictionarySegment<T>> dictionary_segment, const T typed_search_value) {
-    switch (_scan_type) {
-      case ScanType::OpEquals:
-      case ScanType::OpNotEquals:
-      case ScanType::OpLessThanEquals:
-      case ScanType::OpLessThan:
-      case ScanType::OpGreaterThan:
-      case ScanType::OpGreaterThanEquals:
-         return dictionary_segment->lower_bound(typed_search_value);
-      default:
-        throw std::runtime_error("ScanType is not defined");
-    }
-  }
-
   template <typename T>
   void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list,
-                                           const std::function<bool(ValueID, ValueID)> &comparator,
                                            const T typed_search_value,
                                            const ChunkID &chunk_index,
                                            const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
                                            const std::vector<ChunkOffset> &input_filter) const {
-    ValueID search_value_id = use_upper_bound(_scan_type) ?
-                        dictionary_segment->upper_bound(typed_search_value) :
-                        dictionary_segment->lower_bound(typed_search_value);
     std::vector<ChunkOffset> output_filter;
-    for(ColumnID attribute_vector_index{0}; attribute_vector_index < dictionary_segment->attribute_vector()->size(); ++attribute_vector_index) {
-      if (comparator(dictionary_segment->attribute_vector()->get(attribute_vector_index), search_value_id)){
-        output_filter.push_back(attribute_vector_index);
+     
+    if (_scan_type == ScanType::OpNotEquals || _scan_type == ScanType::OpEquals){
+      ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
+      if (search_value_id != INVALID_VALUE_ID && (dictionary_segment->dictionary()->at(dictionary_segment->attribute_vector()->get(search_value_id)) == typed_search_value)) {
+        auto comparator = get_comparator<ValueID>(_scan_type);
+        auto attribute_vector = dictionary_segment->attribute_vector();
+        for(auto chunk_offset : input_filter) {
+          if (comparator(attribute_vector->get(chunk_offset), search_value_id)) {
+            output_filter.push_back(chunk_offset);
+          }
+        }
+      } else {
+        if (_scan_type == ScanType::OpNotEquals) {
+          output_filter.resize(dictionary_segment->size());
+          std::iota(output_filter.begin(), output_filter.end(), 0); 
+        }
+      }
+    } else if (_scan_type == ScanType::OpGreaterThanEquals || _scan_type == ScanType::OpLessThan) {
+      ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
+      if (search_value_id != INVALID_VALUE_ID){
+        auto comparator = get_comparator<ValueID>(_scan_type);
+        auto attribute_vector = dictionary_segment->attribute_vector();
+        for(auto chunk_offset : input_filter) {
+          if (comparator(attribute_vector->get(chunk_offset), search_value_id)) {
+            output_filter.push_back(chunk_offset);
+          }
+        }
+      } else {
+        if (_scan_type == ScanType::OpLessThan) {
+          output_filter.resize(dictionary_segment->size());
+          std::iota(output_filter.begin(), output_filter.end(), 0); 
+        }
+      }
+    } else if (_scan_type == ScanType::OpGreaterThan){
+      ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
+      if (search_value_id != INVALID_VALUE_ID){
+        auto attribute_vector = dictionary_segment->attribute_vector();
+        for(auto chunk_offset : input_filter) {
+          if (attribute_vector->get(chunk_offset) >= search_value_id) {
+            output_filter.push_back(chunk_offset);
+          }
+        }
+      }
+    } else if (_scan_type == ScanType::OpLessThanEquals) {
+      ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
+      if (search_value_id != INVALID_VALUE_ID){
+        auto attribute_vector = dictionary_segment->attribute_vector();
+        for(auto chunk_offset : input_filter) {
+          if (attribute_vector->get(chunk_offset) < search_value_id) {
+            output_filter.push_back(chunk_offset);
+          }
+        }
+      } else { 
+        output_filter.resize(dictionary_segment->size());
+        std::iota(output_filter.begin(), output_filter.end(), 0); 
       }
     }
+    
     pos_list->reserve(pos_list->size() + output_filter.size());
     for (ChunkOffset chunk_offset : output_filter) {
       pos_list->push_back(RowID{chunk_index, chunk_offset});

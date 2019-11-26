@@ -44,10 +44,7 @@ class TableScan : public AbstractOperator {
                                  const std::vector<ChunkOffset>& input_filter) const;
 
   template <typename T>
-  ValueID _search_value_id_for_value(const std::shared_ptr<DictionarySegment<T>> dictionary_segment, const T typed_search_value);
-
-  template <typename T>
-  void _scan_dictionary_segment(const std::shared_ptr<PosList> pos_list, const std::function<bool(ValueID, ValueID)>& comparator,
+  void _scan_dictionary_segment(const std::shared_ptr<PosList> pos_list,
                                 const T typed_search_value,
                                 const ChunkID& chunk_index, const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
                                 const std::vector<ChunkOffset>& input_filter) const;
