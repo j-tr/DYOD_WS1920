@@ -35,10 +35,10 @@ class ReferenceSegmentTest : public ::testing::Test {
     _test_table_dict->add_column("b", "int");
     for (int i = 0; i <= 24; i += 2) _test_table_dict->append({i, 100 + i});
 
-     _test_table_dict->compress_chunk(ChunkID(0));
-     _test_table_dict->compress_chunk(ChunkID(1));
+    _test_table_dict->compress_chunk(ChunkID(0));
+    _test_table_dict->compress_chunk(ChunkID(1));
 
-     StorageManager::get().add_table("test_table_dict", _test_table_dict);
+    //StorageManager::get().add_table("test_table_dict", _test_table_dict);
   }
 
  public:

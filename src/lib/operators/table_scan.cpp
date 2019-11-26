@@ -85,38 +85,6 @@ namespace opossum {
           			   _scan_type(scan_type), 
           			   _search_value(search_value) {}    
 
-  template <typename T>
-  std::vector<ChunkOffset> TableScan::scan(
-          const std::shared_ptr<ValueSegment<T>> value_segment, 
-          const std::function<bool (T, T)> comparator, 
-          const T search_value, 
-          const std::vector<ChunkOffset> input_filter) const{
-    std::vector<ChunkOffset> output_filter;
-    const auto& values = value_segment->values();
-    for(auto chunk_offset : input_filter) {
-      const T& value = values[chunk_offset];
-      if (comparator(value, search_value)) {
-        output_filter.push_back(chunk_offset);
-      }
-    }
-    return output_filter;
-  }            
-
-  template <typename T>
-  std::vector<ChunkOffset> TableScan::scan(
-          const std::shared_ptr<DictionarySegment<T>> dictionary_segment,
-          const std::function<bool (ValueID, ValueID)> comparator,
-          const ValueID search_value_id,
-          const std::vector<ChunkOffset> input_filter) const{
-    std::vector<ChunkOffset> output_filter;
-    for(ColumnID attribute_vector_index{0}; attribute_vector_index < dictionary_segment->attribute_vector()->size(); ++attribute_vector_index) {
-      if (comparator(dictionary_segment->attribute_vector()->get(attribute_vector_index), search_value_id)){
-        output_filter.push_back(attribute_vector_index);
-      }
-    }
-    return output_filter;
-  }       
-
   std::shared_ptr<const Table> TableScan::_on_execute() {
         
     // Get input table
@@ -152,9 +120,9 @@ namespace opossum {
           _scan_value_segment(pos_list, comparator, typed_search_value, chunk_index, value_segment, input_filter);
         } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<Type>>(segment)){
           // if segment is dictionary segment
-          std::vector<ChunkOffset> input_filter(value_segment->size());
+          std::vector<ChunkOffset> input_filter(dictionary_segment->size());
           std::iota(input_filter.begin(), input_filter.end(), 0);
-          _scan_dictionary_segment<Type>(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment,
+          _scan_dictionary_segment(pos_list, get_comparator<ValueID>(_scan_type), typed_search_value, chunk_index, dictionary_segment,
                                    input_filter);
         } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)){
           // if segment is reference segment
@@ -201,9 +169,14 @@ namespace opossum {
                                       const ChunkID& chunk_index,
                                       const std::shared_ptr<ValueSegment<T>>& value_segment,
                                       const std::vector<ChunkOffset>& input_filter) const {
-
-    auto output_filter = scan(value_segment, comparator, typed_search_value, input_filter);
-    // TODO comment: why are we taking into account the initial pos_list->size()?
+    std::vector<ChunkOffset> output_filter;
+    const auto& values = value_segment->values();
+    for(auto chunk_offset : input_filter) {
+      const T& value = values[chunk_offset];
+      if (comparator(value, typed_search_value)) {
+        output_filter.push_back(chunk_offset);
+      }
+    }
     pos_list->reserve(pos_list->size() + output_filter.size());
     for (ChunkOffset chunk_offset : output_filter) {
       pos_list->push_back(RowID{chunk_index, chunk_offset});
@@ -219,7 +192,12 @@ namespace opossum {
     ValueID search_value_id = use_upper_bound(_scan_type) ?
                         dictionary_segment->upper_bound(typed_search_value) :
                         dictionary_segment->lower_bound(typed_search_value);
-    auto output_filter = scan(dictionary_segment, comparator, search_value_id, input_filter);
+    std::vector<ChunkOffset> output_filter;
+    for(ColumnID attribute_vector_index{0}; attribute_vector_index < dictionary_segment->attribute_vector()->size(); ++attribute_vector_index) {
+      if (comparator(dictionary_segment->attribute_vector()->get(attribute_vector_index), search_value_id)){
+        output_filter.push_back(attribute_vector_index);
+      }
+    }
     pos_list->reserve(pos_list->size() + output_filter.size());
     for (ChunkOffset chunk_offset : output_filter) {
       pos_list->push_back(RowID{chunk_index, chunk_offset});
