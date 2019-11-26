@@ -43,16 +43,10 @@ class DictionarySegment : public BaseSegment {
     _dictionary->erase(last, _dictionary->end());
 
     // create Attribute Vector with the most fitting width
-    if (_dictionary->size() <= std::numeric_limits<uint8_t>::max()) {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment->size());
-    } else if (_dictionary->size() <= std::numeric_limits<uint16_t>::max()) {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>(value_segment->size());
-    } else {
-      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>(value_segment->size());
-    }
+    _attribute_vector = _create_fix_sized_attribute_vector(_dictionary->size(), value_segment->size());
 
     // for each entry in the segment
-    for (ColumnID segment_column(0); segment_column < value_segment->size(); ++segment_column) {
+    for (ChunkOffset segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
       const ValueID& dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
       //DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
@@ -67,19 +61,19 @@ class DictionarySegment : public BaseSegment {
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override {
     PerformanceWarning("operator[] used");
 
-    auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary->at(valueID);
+    auto value_id = _attribute_vector->get(chunk_offset);
+    return _dictionary->at(value_id);
   }
 
   // return the value at a certain position.
   T get(const size_t chunk_offset) const {
-    auto valueID = _attribute_vector->get(chunk_offset);
-    return _dictionary.at(valueID);
+    auto value_id = _attribute_vector->get(chunk_offset);
+    return _dictionary->at(value_id);
   }
 
   // dictionary segments are immutable
   void append(const AllTypeVariant&) override {
-    // do nothing
+    throw std::runtime_error("Tried to append but Dictionary Segments are immutable");
   }
 
   // returns an underlying dictionary
@@ -131,6 +125,18 @@ class DictionarySegment : public BaseSegment {
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
   std::shared_ptr<BaseAttributeVector> _attribute_vector;
+
+ private:
+  std::shared_ptr<BaseAttributeVector> _create_fix_sized_attribute_vector(const size_t dict_size,
+                                                                          const size_t value_segment_size) {
+    if (dict_size <= std::numeric_limits<uint8_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<uint8_t>>(value_segment_size);
+    } else if (dict_size <= std::numeric_limits<uint16_t>::max()) {
+      return std::make_shared<FixedSizeAttributeVector<uint16_t>>(value_segment_size);
+    } else {
+      return std::make_shared<FixedSizeAttributeVector<uint32_t>>(value_segment_size);
+    }
+  }
 };
 
 }  // namespace opossum
