@@ -89,12 +89,10 @@ namespace opossum {
       const auto comparator = get_comparator<Type>(_scan_type);
       const auto typed_search_value = type_cast<Type>(_search_value);
 
+      // for each chunk and the relevant segment, compare the values and append to PosList
       for (ChunkID chunk_index = ChunkID(0); chunk_index < input_chunk_count; ++chunk_index) {
-        // for each segment
-          // - execute the comparison
-          // - append to PosList
         const auto& segment = input_table->get_chunk(chunk_index).get_segment(_column_id);
-        
+
         if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<Type>>(segment)){
           // if segment is value segment
           // create a PosList-equivalent vector with every possible chunk_offset
@@ -132,12 +130,12 @@ namespace opossum {
                                           const std::function<bool(T, T)> &comparator,
                                           const T typed_search_value,
                                           const std::shared_ptr<ReferenceSegment> reference_segment) const {
-    // extract chunk_offsets for each referenced segment
+    // for each position referenced in this segment, extract chunk_offsets
     for (auto position_iterator = reference_segment->pos_list()->begin(); position_iterator < reference_segment->pos_list()->end();){
 
       ChunkID referenced_chunk_id = position_iterator->chunk_id;
-      std::vector<ChunkOffset> input_filter;
       auto chunk_position_iterator = position_iterator;
+      auto input_filter = std::vector<ChunkOffset>{};
       for (; chunk_position_iterator->chunk_id == position_iterator->chunk_id; chunk_position_iterator++){
         input_filter.push_back(chunk_position_iterator->chunk_offset);
       }
