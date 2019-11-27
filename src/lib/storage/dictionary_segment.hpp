@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <utils/assert.hpp>
 
 #include "all_type_variant.hpp"
 #include "base_segment.hpp"
@@ -49,7 +50,7 @@ class DictionarySegment : public BaseSegment {
     for (ChunkOffset segment_column(0); segment_column < value_segment->size(); ++segment_column) {
       // find corresponding dictionary value
       const ValueID& dictionary_value_id = lower_bound(type_cast<T>((*value_segment)[segment_column]));
-      //DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
+      DebugAssert(dictionary_value_id != INVALID_VALUE_ID, "a dictionary value must be found for each attribute");
       _attribute_vector->set(segment_column, dictionary_value_id);
     }
   }
