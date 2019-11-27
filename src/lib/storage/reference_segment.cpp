@@ -2,10 +2,11 @@
 
 namespace opossum {
 
-ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id, const std::shared_ptr<const PosList> pos)
-  : _referenced_column_id(referenced_column_id), _pos_list(pos) {
-  
-  auto first_segment = std::dynamic_pointer_cast<ReferenceSegment>(referenced_table->get_chunk(ChunkID(0)).get_segment(referenced_column_id));
+ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> referenced_table,
+                                   const ColumnID referenced_column_id, const std::shared_ptr<const PosList> pos)
+    : _referenced_column_id(referenced_column_id), _pos_list(pos) {
+  auto first_segment = std::dynamic_pointer_cast<ReferenceSegment>(
+      referenced_table->get_chunk(ChunkID(0)).get_segment(referenced_column_id));
 
   if (first_segment) {
     _referenced_table = first_segment->referenced_table();
@@ -21,24 +22,13 @@ AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) cons
   return (*column)[pos_list()->at(chunk_offset).chunk_offset];
 }
 
-  const std::shared_ptr<const PosList> ReferenceSegment::pos_list() const {
-    return _pos_list;
-  }
-  const std::shared_ptr<const Table> ReferenceSegment::referenced_table() const {
-    return _referenced_table;
-  }
+const std::shared_ptr<const PosList> ReferenceSegment::pos_list() const { return _pos_list; }
+const std::shared_ptr<const Table> ReferenceSegment::referenced_table() const { return _referenced_table; }
 
-  ColumnID ReferenceSegment::referenced_column_id() const {
-    return _referenced_column_id;
-  }
+ColumnID ReferenceSegment::referenced_column_id() const { return _referenced_column_id; }
 
+size_t ReferenceSegment::size() const { return pos_list()->size(); }
 
-size_t ReferenceSegment::size() const {
-  return pos_list()->size();
-}
+size_t ReferenceSegment::estimate_memory_usage() const { return 0; }
 
-size_t ReferenceSegment::estimate_memory_usage() const {
-  return 0;
-}
-
-}
+}  // namespace opossum

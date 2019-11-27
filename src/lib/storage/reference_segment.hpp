@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include "utils/assert.hpp"
 #include "base_segment.hpp"
 #include "dictionary_segment.hpp"
 #include "table.hpp"
@@ -22,7 +21,8 @@ class ReferenceSegment : public BaseSegment {
  public:
   // creates a reference segment
   // the parameters specify the positions and the referenced segment
-  ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id, const std::shared_ptr<const PosList> pos);
+  ReferenceSegment(const std::shared_ptr<const Table> referenced_table, const ColumnID referenced_column_id,
+                   const std::shared_ptr<const PosList> pos);
 
   AllTypeVariant operator[](const ChunkOffset chunk_offset) const override;
 

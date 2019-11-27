@@ -20,7 +20,7 @@
 
 namespace opossum {
 
-Table::Table(const uint32_t chunk_size) : _max_chunk_size{chunk_size}{
+Table::Table(const uint32_t chunk_size) : _max_chunk_size{chunk_size} {
   auto first_chunk = std::make_shared<Chunk>();
   _chunk_access = std::make_unique<std::shared_mutex>();
   _chunks.push_back(first_chunk);
@@ -137,7 +137,7 @@ void Table::compress_chunk(ChunkID chunk_id) {
 }
 
 void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {
-  if (_chunks[0]->size() == 0){
+  if (_chunks[0]->size() == 0) {
     _chunks[0] = chunk;
   } else {
     _chunks.push_back(chunk);

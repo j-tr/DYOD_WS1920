@@ -255,8 +255,7 @@ TEST_F(OperatorsTableScanTest, ScanWithEmptyInput) {
 TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
   // 2**8 + 1 values require a data type of 16bit.
   const auto table_wrapper_dict_16 = get_table_op_with_n_dict_entries((1 << 8) + 1);
-  auto scan_1 = std::make_shared<opossum::TableScan>
-                 (table_wrapper_dict_16, ColumnID{0}, ScanType::OpGreaterThan, 200);
+  auto scan_1 = std::make_shared<opossum::TableScan>(table_wrapper_dict_16, ColumnID{0}, ScanType::OpGreaterThan, 200);
   scan_1->execute();
 
   EXPECT_EQ(scan_1->get_output()->row_count(), static_cast<size_t>(57));
