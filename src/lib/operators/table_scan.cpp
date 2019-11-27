@@ -184,9 +184,13 @@ namespace opossum {
     std::vector<ChunkOffset> output_filter;
     auto dictionary = dictionary_segment->dictionary();
     auto attribute_vector = dictionary_segment->attribute_vector();
-    
-    if (_scan_type == ScanType::OpNotEquals || _scan_type == ScanType::OpEquals){
-      ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
+
+    ValueID search_value_id;
+    switch(_scan_type) {
+      case ScanType::OpNotEquals:
+      case ScanType::OpEquals:
+
+        search_value_id = dictionary_segment->lower_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID && (dictionary->at(attribute_vector->get(search_value_id)) == typed_search_value)) {
         auto comparator = get_comparator<ValueID>(_scan_type);
         for(auto chunk_offset : input_filter) {
@@ -200,8 +204,10 @@ namespace opossum {
           std::iota(output_filter.begin(), output_filter.end(), 0); 
         }
       }
-    } else if (_scan_type == ScanType::OpGreaterThanEquals || _scan_type == ScanType::OpLessThan) {
-      ValueID search_value_id = dictionary_segment->lower_bound(typed_search_value);
+      break;
+      case ScanType::OpGreaterThanEquals:
+      case ScanType::OpLessThan:
+      search_value_id = dictionary_segment->lower_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
         auto comparator = get_comparator<ValueID>(_scan_type);
         for(auto chunk_offset : input_filter) {
@@ -215,8 +221,9 @@ namespace opossum {
           std::iota(output_filter.begin(), output_filter.end(), 0); 
         }
       }
-    } else if (_scan_type == ScanType::OpGreaterThan){
-      ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
+      break;
+      case ScanType::OpGreaterThan:
+      search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
         for(auto chunk_offset : input_filter) {
           if (attribute_vector->get(chunk_offset) >= search_value_id) {
@@ -224,8 +231,9 @@ namespace opossum {
           }
         }
       }
-    } else if (_scan_type == ScanType::OpLessThanEquals) {
-      ValueID search_value_id = dictionary_segment->upper_bound(typed_search_value);
+      break;
+      case ScanType::OpLessThanEquals:
+      search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID){
         for(auto chunk_offset : input_filter) {
           if (attribute_vector->get(chunk_offset) < search_value_id) {
@@ -236,6 +244,7 @@ namespace opossum {
         output_filter.resize(dictionary_segment->size());
         std::iota(output_filter.begin(), output_filter.end(), 0); 
       }
+      break;
     }
     
     pos_list->reserve(pos_list->size() + output_filter.size());
