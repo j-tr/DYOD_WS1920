@@ -41,6 +41,8 @@ struct RowID {
   ChunkID chunk_id;
   ChunkOffset chunk_offset;
 
+  RowID(const ChunkID chunk_id, const ChunkOffset chunk_offset) : chunk_id(chunk_id), chunk_offset(chunk_offset) {}
+
   // Joins need to use RowIDs as keys for maps.
   bool operator<(const RowID& rhs) const {
     return std::tie(chunk_id, chunk_offset) < std::tie(rhs.chunk_id, rhs.chunk_offset);

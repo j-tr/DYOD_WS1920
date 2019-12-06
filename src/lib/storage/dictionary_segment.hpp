@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <utils/assert.hpp>
 
 #include "all_type_variant.hpp"
 #include "base_segment.hpp"

@@ -22,7 +22,12 @@ namespace opossum {
 
 Table::Table(const uint32_t chunk_size) : _max_chunk_size{chunk_size} {
   auto first_chunk = std::make_shared<Chunk>();
+  _chunk_access = std::make_unique<std::shared_mutex>();
   _chunks.push_back(first_chunk);
+}
+
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  // Implementation goes here
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
@@ -51,6 +56,10 @@ void Table::append(std::vector<AllTypeVariant> values) {
 }
 
 uint16_t Table::column_count() const { return _column_names.size(); }
+
+void Table::create_new_chunk() {
+  // Implementation goes here
+}
 
 uint64_t Table::row_count() const {
   uint64_t row_count = 0;
@@ -88,13 +97,13 @@ const std::string& Table::column_type(ColumnID column_id) const {
 
 Chunk& Table::get_chunk(ChunkID chunk_id) {
   DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
-  std::shared_lock read_lock(_chunk_access);
+  std::shared_lock read_lock(*_chunk_access);
   return *_chunks[chunk_id];
 }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const {
   DebugAssert(chunk_id < _chunks.size(), "No chunk with given ID");
-  std::shared_lock read_lock(_chunk_access);
+  std::shared_lock read_lock(*_chunk_access);
   return *_chunks[chunk_id];
 }
 
@@ -109,10 +118,10 @@ void Table::compress_chunk(ChunkID chunk_id) {
   };
 
   // start thread for each segment
-  for (size_t column_index = 0; column_index < chunk.size(); ++column_index) {
-    std::shared_ptr<BaseSegment> segment = chunk.get_segment(ColumnID(column_index));
-    std::string type = column_type(ColumnID(column_index));
-    threads.push_back(std::thread(compress, type, segment, column_index));
+  for (ColumnID column_id(0); column_id < chunk.column_count(); ++column_id) {
+    std::shared_ptr<BaseSegment> segment = chunk.get_segment(column_id);
+    std::string type = column_type(column_id);
+    threads.push_back(std::thread(compress, type, segment, column_id));
   }
 
   // join threads and add segment to chunk
@@ -123,8 +132,16 @@ void Table::compress_chunk(ChunkID chunk_id) {
   }
 
   // replace uncompressed chunk by compressed chunk
-  std::unique_lock write_lock(_chunk_access);
-  chunk = std::move(dictionary_chunk);
+  std::unique_lock write_lock(*_chunk_access);
+  chunk = std::move(dictionary_chunk);  // does this actually do anything?
+}
+
+void Table::emplace_chunk(std::shared_ptr<Chunk> chunk) {
+  if (_chunks[0]->size() == 0) {
+    _chunks[0] = chunk;
+  } else {
+    _chunks.push_back(chunk);
+  }
 }
 
 }  // namespace opossum
