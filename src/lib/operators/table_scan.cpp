@@ -104,6 +104,8 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
       } else if (const auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment)) {
         // if segment is reference segment
         _scan_reference_segment(pos_list, comparator, typed_search_value, reference_segment);
+      } else {
+        throw std::runtime_error("The specified segment type is not supported");
       }
     }
   });
@@ -154,15 +156,13 @@ void TableScan::_scan_value_segment(const std::shared_ptr<PosList> pos_list,
                                     const std::vector<ChunkOffset>& input_filter) const {
   std::vector<ChunkOffset> output_filter;
   const auto& values = value_segment->values();
+  pos_list->reserve(pos_list->size() + output_filter.size());
   for (auto chunk_offset : input_filter) {
     const T& value = values[chunk_offset];
     if (comparator(value, typed_search_value)) {
       output_filter.push_back(chunk_offset);
+      pos_list->push_back(RowID{chunk_index, chunk_offset});
     }
-  }
-  pos_list->reserve(pos_list->size() + output_filter.size());
-  for (ChunkOffset chunk_offset : output_filter) {
-    pos_list->push_back(RowID{chunk_index, chunk_offset});
   }
 }
 
@@ -177,9 +177,12 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
 
   ValueID search_value_id;
   switch (_scan_type) {
+    // The following optimizations work because the dictionary is sorted
     case ScanType::OpNotEquals:
     case ScanType::OpEquals:
-
+      // Only if value is in dictionary_segment, that is if lower_bound did return the
+      // value and not INVALID_VALUE_ID or the next bigger one, an scan for equality makes
+      // sense. If Value is not in list, all values are unequal.
       search_value_id = dictionary_segment->lower_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID &&
           (dictionary->at(attribute_vector->get(search_value_id)) == typed_search_value)) {
@@ -191,6 +194,7 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
         }
       } else {
         if (_scan_type == ScanType::OpNotEquals) {
+          // Create reference to all elements in segment
           output_filter.resize(dictionary_segment->size());
           std::iota(output_filter.begin(), output_filter.end(), 0);
         }
@@ -198,6 +202,9 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
       break;
     case ScanType::OpGreaterThanEquals:
     case ScanType::OpLessThan:
+      // If lower_bound returns INVALID_VALUE_ID, which means it reached the end of the
+      // dictionary, all values are smaller than the search value and none is greater or
+      // equal to the search value
       search_value_id = dictionary_segment->lower_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID) {
         auto comparator = get_comparator<ValueID>(_scan_type);
@@ -208,12 +215,15 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
         }
       } else {
         if (_scan_type == ScanType::OpLessThan) {
+          // Create reference to all elements in segment
           output_filter.resize(dictionary_segment->size());
           std::iota(output_filter.begin(), output_filter.end(), 0);
         }
       }
       break;
     case ScanType::OpGreaterThan:
+      // If upper_bound reaches the end of the dictionary segment and thereby returns
+      // INVALID_VALUE_ID, all values have to be smaller than the search value
       search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID) {
         for (auto chunk_offset : input_filter) {
@@ -224,6 +234,8 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
       }
       break;
     case ScanType::OpLessThanEquals:
+      // If upper_bound reaches the end of the dictionary segment and thereby returns
+      // INVALID_VALUE_ID, all values have to be smaller than the search value
       search_value_id = dictionary_segment->upper_bound(typed_search_value);
       if (search_value_id != INVALID_VALUE_ID) {
         for (auto chunk_offset : input_filter) {
@@ -232,6 +244,7 @@ void TableScan::_scan_dictionary_segment(const std::shared_ptr<PosList> pos_list
           }
         }
       } else {
+        // Create reference to all elements in segment
         output_filter.resize(dictionary_segment->size());
         std::iota(output_filter.begin(), output_filter.end(), 0);
       }
